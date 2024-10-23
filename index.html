@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple Test Sender</title>
+    <title>Cast Sender</title>
     <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <style>
         body { font-family: Arial; margin: 20px; }
-        button { padding: 10px; margin: 5px; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #ccc;
+        }
         .log { 
             border: 1px solid #ccc; 
             padding: 10px; 
@@ -13,19 +24,22 @@
             height: 200px;
             overflow-y: auto;
             font-family: monospace;
+            background: #f5f5f5;
         }
     </style>
 </head>
 <body>
-    <h1>Cast Test Sender</h1>
-    <button onclick="initCast()">1. Initialize</button>
-    <button onclick="startSession()">2. Start Session</button>
-    <button onclick="sendMessage()">3. Send Message</button>
+    <h1>Cast Sender</h1>
+    <div>
+        <button id="initButton" onclick="initCast()">1. Initialize Cast</button>
+        <button id="connectButton" onclick="connectDevice()">2. Connect to Device</button>
+        <button id="messageButton" onclick="sendMessage()">3. Send Message</button>
+    </div>
     <div id="log" class="log"></div>
 
     <script>
         let castContext = null;
-        const APP_ID = '64F29018';
+        const APP_ID = 'ED052386';
 
         function log(message) {
             const logDiv = document.getElementById('log');
@@ -34,40 +48,64 @@
             console.log(message);
         }
 
+        // Initialize when Cast API is available
         window['__onGCastApiAvailable'] = function(isAvailable) {
             log(`Cast API available: ${isAvailable}`);
-            if (isAvailable) initCast();
+            if (isAvailable) {
+                initCast();
+            }
         };
 
         function initCast() {
             try {
+                log('Initializing Cast...');
+                
+                // Initialize Cast
                 castContext = cast.framework.CastContext.getInstance();
+                
+                // Configure Cast options
                 castContext.setOptions({
                     receiverApplicationId: APP_ID,
                     autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 });
 
+                // Add listeners for cast state changes
                 castContext.addEventListener(
                     cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-                    event => log(`Cast state: ${event.castState}`)
+                    event => {
+                        log(`Cast state changed: ${event.castState}`);
+                        updateButtons(event.castState);
+                    }
                 );
 
+                // Add listeners for session state changes
                 castContext.addEventListener(
                     cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-                    event => log(`Session state: ${event.sessionState}`)
+                    event => log(`Session state changed: ${event.sessionState}`)
                 );
 
-                log('Cast initialized');
+                log('Cast initialized successfully');
+                updateButtons(castContext.getCastState());
+
             } catch (error) {
-                log(`Init error: ${error.message}`);
+                log(`Initialization error: ${error.message}`);
             }
         }
 
-        function startSession() {
-            log('Starting session...');
+        function connectDevice() {
+            log('Requesting session...');
+            
             castContext.requestSession()
-                .then(session => log('Session started'))
-                .catch(error => log(`Session error: ${error.message || 'Unknown error'}`));
+                .then(session => {
+                    log('Session created successfully');
+                    updateButtons(castContext.getCastState());
+                })
+                .catch(error => {
+                    log(`Session error: ${error.message || 'Unknown error'}`);
+                    if (error.code) {
+                        log(`Error code: ${error.code}`);
+                    }
+                });
         }
 
         function sendMessage() {
@@ -79,12 +117,28 @@
 
             const message = {
                 type: 'test',
-                time: new Date().toISOString()
+                timestamp: new Date().toISOString()
             };
 
             session.sendMessage('urn:x-cast:com.nokbok.helloworld', message)
-                .then(() => log('Message sent'))
+                .then(() => log('Message sent successfully'))
                 .catch(error => log(`Message error: ${error.message}`));
+        }
+
+        function updateButtons(castState) {
+            const connectButton = document.getElementById('connectButton');
+            const messageButton = document.getElementById('messageButton');
+            
+            if (castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
+                connectButton.disabled = true;
+                messageButton.disabled = true;
+            } else if (castState === cast.framework.CastState.NOT_CONNECTED) {
+                connectButton.disabled = false;
+                messageButton.disabled = true;
+            } else if (castState === cast.framework.CastState.CONNECTED) {
+                connectButton.disabled = true;
+                messageButton.disabled = false;
+            }
         }
     </script>
 </body>
