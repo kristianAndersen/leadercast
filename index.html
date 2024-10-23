@@ -18,11 +18,13 @@
     
             window.__onGCastApiAvailable = function(isAvailable) {
                 if (isAvailable) {
+                  console.log("cast api is available");
                     initializeCastApi();
                 }
             };
     
             function initializeCastApi() {
+              
                 cast.framework.CastContext.getInstance().setOptions({
                     receiverApplicationId: applicationId,
                     autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
@@ -41,6 +43,8 @@
                 });
     
                 document.getElementById('sendButton').addEventListener('click', sendMessage);
+
+                console.log("cast api is initialized");
             }
     
             function sendMessage() {
