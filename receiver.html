@@ -1,23 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minimal Receiver</title>
+    <title>Simple CAF Receiver</title>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-    <div id="message">Waiting for connection...</div>
+    <div id="debug" style="position:fixed; top:10px; left:10px; color:white; background:rgba(0,0,0,0.7); padding:10px;">
+        Initializing...
+    </div>
     <script>
+        const debug = msg => {
+            console.log(msg);
+            document.getElementById('debug').innerText = msg;
+        };
+
         const context = cast.framework.CastReceiverContext.getInstance();
         
+        // Enable debug logging
+        context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+
+        // Add event listeners
+        context.addEventListener(cast.framework.system.EventType.READY, () => {
+            debug('Receiver is ready');
+        });
+
+        context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
+            debug('Sender connected: ' + event.senderId);
+        });
+
         // Listen for custom messages
-        context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', function(event) {
-            console.log('Message received', event.data);
-            document.getElementById('message').innerHTML = 
-                'Message received: ' + JSON.stringify(event.data);
+        context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
+            debug('Message received: ' + JSON.stringify(event.data));
         });
 
         // Start the receiver
-        context.start();
+        context.start({
+            statusText: 'Ready to receive',
+            maxInactivity: 6000
+        });
     </script>
 </body>
 </html>
