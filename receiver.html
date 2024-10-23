@@ -132,7 +132,7 @@
 
                     if (getScreenInfo == 'getScreenInfo') {
                         const info = getScreenInfo();
-                       
+                       log(info);    
                         // Send screen info back to sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, 
                             { 'type': 'screenInfo', 'data': info }
