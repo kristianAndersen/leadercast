@@ -88,7 +88,7 @@
                 // Add message listener
                 context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
-                    log(event.data.command)
+                    log(event)
                    // if (event.data.command === 'getScreenInfo') {
                         const info = "cool beans";
                         log(info);
