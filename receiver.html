@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minimal Cast Receiver</title>
+    <title>Cast Receiver</title>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
     <style>
         body {
@@ -26,35 +26,71 @@
     <div id="status" class="status">Starting...</div>
 
     <script>
-        const context = cast.framework.CastReceiverContext.getInstance();
-        const status = document.getElementById('status');
-
         function updateStatus(message) {
             console.log(message);
-            status.textContent = message;
+            document.getElementById('status').textContent = message;
         }
 
-        // Basic initialization
-        context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+        try {
+            // Wait for cast SDK to be ready
+            if (!cast || !cast.framework) {
+                updateStatus('Cast SDK not available');
+                throw new Error('Cast SDK not available');
+            }
 
-        // System events
-        context.addEventListener(cast.framework.system.EventType.READY, () => {
-            updateStatus('Ready to receive cast messages');
-        });
+            updateStatus('Initializing...');
 
-        context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
-            updateStatus('Sender connected: ' + event.senderId);
-        });
+            // Get context with error handling
+            const context = cast.framework.CastReceiverContext.getInstance();
+            if (!context) {
+                updateStatus('Failed to get receiver context');
+                throw new Error('Failed to get receiver context');
+            }
 
-        // Message handling
-        context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
-            updateStatus('Message received: ' + JSON.stringify(event.data));
-        });
+            // Configure options
+            const options = new cast.framework.CastReceiverOptions();
+            options.disableIdleTimeout = true;
 
-        // Start the receiver
-        updateStatus('Starting receiver...');
-        context.start();
-        updateStatus('Receiver started');
+            // Add event listeners
+            context.addEventListener(cast.framework.system.EventType.READY, (event) => {
+                updateStatus('Ready for casting');
+            });
+
+            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, (event) => {
+                updateStatus('Sender connected: ' + event.senderId);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, (event) => {
+                updateStatus('Sender disconnected: ' + event.senderId);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.ERROR, (event) => {
+                updateStatus('Error: ' + JSON.stringify(event));
+            });
+
+            // Add custom message listener
+            context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', (event) => {
+                updateStatus('Message received: ' + JSON.stringify(event.data));
+                // Send acknowledgment
+                try {
+                    context.sendCustomMessage('urn:x-cast:com.nokbok.helloworld', 
+                        event.senderId, 
+                        { status: 'received', message: event.data }
+                    );
+                } catch (error) {
+                    console.error('Error sending response:', error);
+                }
+            });
+
+            // Start the receiver
+            updateStatus('Starting receiver...');
+            context.start(options);
+            updateStatus('Receiver started and waiting for connection');
+
+        } catch (error) {
+            updateStatus('Initialization error: ' + error.message);
+            console.error('Full error:', error);
+        }
     </script>
 </body>
 </html>
