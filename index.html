@@ -3,68 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chromecast Sender</title>
-    <!-- Load the Cast SDK -->
-    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-</head>
-<body>
-    <button id="castButton">Cast</button>
-    <p id="messageDisplay"></p>
-
+    <title>Custom Receiver Test Sender</title>
+    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <script>
-        const applicationId = 'ED052386';
-        let session = null;
+        let castSession = null;
+        const CUSTOM_NAMESPACE = 'urn:x-cast:com.nokbok.helloworld';
 
-        // Wait for the Cast API to be available
         window['__onGCastApiAvailable'] = function(isAvailable) {
             if (isAvailable) {
-                console.log("Cast API available, initializing...");
                 initializeCastApi();
-            } else {
-                console.error("Cast API not available.");
             }
         };
 
-        // Initialize Cast API
         function initializeCastApi() {
-            cast.framework.CastContext.getInstance().setOptions({
-                receiverApplicationId: applicationId,
+            const context = cast.framework.CastContext.getInstance();
+            context.setOptions({
+                receiverApplicationId: 'ED052386',
                 autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
             });
 
-            // Add event listener for session state changes
-            cast.framework.CastContext.getInstance().addEventListener(
+            // Listen for session state changes
+            context.addEventListener(
                 cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-                function(event) {
-                    if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-                        session = cast.framework.CastContext.getInstance().getCurrentSession();
-                        console.log("Session started: ", session);
-                        
-                        // Listen for messages from the receiver
-                        session.addMessageListener('urn:x-cast:com.example.helloworld', (namespace, message) => {
-                            document.getElementById('messageDisplay').textContent = 'Receiver says: ' + message.message;
-                        });
-                    }
+                event => {
+                    console.log('Session State:', event.sessionState);
+                    updateStatus('Session: ' + event.sessionState);
                 }
             );
         }
 
-        // Start casting and send 'Hello' message to the receiver
-        document.getElementById('castButton').addEventListener('click', () => {
-            const context = cast.framework.CastContext.getInstance();
-            context.requestSession().then(function() {
-                session = cast.framework.CastContext.getInstance().getCurrentSession();
-                if (session) {
-                    // Send message to the receiver
-                    session.sendMessage('urn:x-cast:com.example.helloworld', { message: 'Hello' });
-                    console.log('Message sent: Hello');
-                } else {
-                    console.error('No session available.');
-                }
-            }).catch(function(error) {
-                console.error('Error starting session: ', error);
-            });
-        });
+        function sendMessage() {
+            const session = cast.framework.CastContext.getInstance().getCurrentSession();
+            if (session) {
+                const message = {
+                    type: 'test',
+                    timestamp: new Date().toISOString()
+                };
+                
+                session.sendMessage(CUSTOM_NAMESPACE, message)
+                    .then(() => {
+                        console.log('Message sent successfully');
+                        updateStatus('Message sent');
+                    })
+                    .catch(error => {
+                        console.error('Error sending message:', error);
+                        updateStatus('Send error: ' + error);
+                    });
+            } else {
+                updateStatus('No active session');
+            }
+        }
+
+        function connect() {
+            cast.framework.CastContext.getInstance()
+                .requestSession()
+                .then(session => {
+                    console.log('Connected:', session);
+                    updateStatus('Connected!');
+                    castSession = session;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    updateStatus('Error: ' + error.message || error);
+                });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log('Status:', message);
+        }
     </script>
+</head>
+<body>
+    <h1>Custom Receiver Test</h1>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendMessage()">Send Test Message</button>
+    <div id="status">Not connected</div>
 </body>
 </html>

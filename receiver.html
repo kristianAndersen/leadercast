@@ -3,27 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chromecast Receiver</title>
-    <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <title>Debug Custom Receiver</title>
+    <style>
+        .status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+        }
+    </style>
+    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-    <p>Receiver is running...</p>
-    
+    <div id="status" class="status">Initializing...</div>
     <script>
-        // Initialize the receiver
         const context = cast.framework.CastReceiverContext.getInstance();
+        const playerManager = context.getPlayerManager();
         
-        // Listen for messages from the sender
-        const messageBus = context.getCastMessageBus('urn:x-cast:com.example.helloworld');
-        
-        messageBus.onMessage = (event) => {
-            console.log('Received message:', event.data.message);
-            
-            // Send 'World' back to the sender
-            messageBus.send(event.senderId, { message: 'World' });
-        };
+        // Debug logging
+        cast.framework.CastReceiverContext.getInstance().setLoggerLevel(
+            cast.framework.LoggerLevel.DEBUG
+        );
 
-        context.start();
+        // Status display function
+        function updateStatus(message) {
+            console.log(message);
+            document.getElementById('status').textContent = message;
+        }
+
+        // Add error handling
+        playerManager.addEventListener(
+            cast.framework.events.category.CORE,
+            event => {
+                console.log('Core Event:', event);
+                updateStatus('Core Event: ' + event.type);
+            }
+        );
+
+        // Listen for custom messages
+        context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
+            console.log('Custom message received:', event.data);
+            updateStatus('Message received: ' + JSON.stringify(event.data));
+            
+            // Send acknowledgment back to sender
+            if (event.senderId) {
+                context.sendCustomMessage('urn:x-cast:com.nokbok.helloworld', 
+                    event.senderId, 
+                    { status: 'received', originalMessage: event.data }
+                );
+            }
+        });
+
+        // Handle system events
+        context.addEventListener(cast.framework.system.EventType.READY, () => {
+            updateStatus('Receiver is ready');
+        });
+
+        context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
+            updateStatus('Sender connected: ' + event.senderId);
+        });
+
+        context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, event => {
+            updateStatus('Sender disconnected: ' + event.senderId);
+        });
+
+        // Start the receiver
+        context.start({
+            statusText: 'Ready to receive',
+            maxInactivity: 6000
+        }).then(() => {
+            updateStatus('Receiver started successfully');
+        }).catch(error => {
+            updateStatus('Error starting receiver: ' + error);
+        });
     </script>
 </body>
 </html>
