@@ -1,39 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minimal Cast Receiver</title>
-    <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <title>Test Receiver</title>
+    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <style>
+        body {
+            background-color: #0000FF; /* Blue background to be clearly visible */
+            color: white;
+            font-family: Arial;
+            font-size: 24px;
+            margin: 20px;
+        }
+    </style>
 </head>
-<body style="background: #000; color: #fff;">
-    <div id="status" style="padding: 20px; font-family: Arial;">Starting...</div>
+<body>
+    <h1>Test Receiver</h1>
+    <div id="status">Initializing...</div>
 
     <script>
         const status = document.getElementById('status');
-        
-        function log(message) {
-            console.log(message);
-            status.textContent = message;
-        }
 
         try {
-            log('Starting receiver...');
-            
+            // Get context
             const context = cast.framework.CastReceiverContext.getInstance();
             
+            // Set debug level
+            context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+
+            // Event handlers
             context.addEventListener(cast.framework.system.EventType.READY, () => {
-                log('Receiver is ready');
+                status.textContent = 'READY - Receiver is running';
             });
 
             context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, () => {
-                log('Sender connected');
+                status.textContent = 'CONNECTED - Sender connected!';
             });
 
-            // Start with basic options
+            // Start
             context.start();
-            log('Receiver started');
+            status.textContent = 'STARTED - Waiting for connection...';
 
         } catch (error) {
-            log('Error: ' + error.message);
+            status.textContent = 'ERROR: ' + error.message;
         }
     </script>
 </body>

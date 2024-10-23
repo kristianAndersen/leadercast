@@ -1,106 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Debug Cast Sender</title>
-    
+    <title>Test Cast Sender</title>
     <style>
         body { font-family: Arial; margin: 20px; }
-        button { padding: 10px; margin: 5px; }
-        .log { 
-            border: 1px solid #ccc; 
-            padding: 10px; 
-            height: 300px; 
+        button { 
+            padding: 10px 20px; 
+            margin: 5px;
+            font-size: 16px;
+        }
+        #log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            height: 200px;
             overflow-y: auto;
             font-family: monospace;
         }
     </style>
 </head>
 <body>
+    <h1>Test Cast Sender</h1>
     <div>
-        <button onclick="initCustom()">Try Custom Receiver</button>
-        <button onclick="initDefault()">Try Default Receiver</button>
-        <button onclick="checkState()">Check State</button>
+        <button onclick="initializeCast()">1. Initialize</button>
+        <button onclick="checkAvailability()">2. Check Availability</button>
+        <button onclick="startSession()">3. Start Session</button>
     </div>
-    <div id="log" class="log"></div>
+    <div id="log"></div>
 
     <script>
-        const CUSTOM_APP_ID = '64F29018';
-        const DEFAULT_APP_ID = 'CC1AD845';
+        const APP_ID = '64F29018';
         let castContext = null;
 
-        function log(msg) {
-            const div = document.getElementById('log');
+        function log(message) {
+            const logDiv = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
-            div.innerHTML = `${time}: ${msg}<br>` + div.innerHTML;
-            console.log(msg);
+            logDiv.innerHTML = `${time}: ${message}<br>` + logDiv.innerHTML;
+            console.log(message);
         }
 
         window['__onGCastApiAvailable'] = function(isAvailable) {
             log(`Cast API available: ${isAvailable}`);
+            if (isAvailable) initializeCast();
         };
 
-        function initializeWithAppId(appId) {
+        function initializeCast() {
             try {
-                log(`Initializing with app ID: ${appId}`);
-                
-                // Initialize Cast API
-                const sessionRequest = new chrome.cast.SessionRequest(appId);
-                const apiConfig = new chrome.cast.ApiConfig(
-                    sessionRequest,
-                    function(status) {
-                        log('Receiver status: ' + status);
-                    },
-                    function(availability) {
-                        log('Receiver availability: ' + availability);
-                    },
+                // Initialize using Chrome Cast V3 API
+                const initializeConfig = new chrome.cast.ApiConfig(
+                    new chrome.cast.SessionRequest(APP_ID),
+                    sessionListener,
+                    receiverListener,
                     chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 );
 
-                chrome.cast.initialize(apiConfig,
-                    function() {
-                        log('Initialization success');
-                        requestSession();
-                    },
-                    function(error) {
-                        log('Initialization error: ' + error.description);
-                    }
+                chrome.cast.initialize(
+                    initializeConfig,
+                    () => log('Initialize success'),
+                    error => log('Initialize error: ' + error.description)
                 );
+
             } catch (error) {
-                log('Error: ' + error.message);
+                log('Error initializing: ' + error.message);
             }
         }
 
-        function initCustom() {
-            initializeWithAppId(CUSTOM_APP_ID);
+        function sessionListener(session) {
+            log('New session: ' + session.sessionId);
         }
 
-        function initDefault() {
-            initializeWithAppId(DEFAULT_APP_ID);
+        function receiverListener(availability) {
+            log('Receiver status: ' + availability);
         }
 
-        function requestSession() {
-            log('Requesting session...');
-            chrome.cast.requestSession(
-                function(session) {
-                    log('Session created: ' + session.sessionId);
-                },
-                function(error) {
-                    log('Session error: ' + error.description);
-                }
-            );
-        }
-
-        function checkState() {
+        function checkAvailability() {
             if (!chrome.cast || !chrome.cast.isAvailable) {
                 log('Cast API not available');
                 return;
             }
 
-            log('Cast API is available');
-            log('Extension status: ' + (chrome.cast.isAvailable ? 'Loaded' : 'Not loaded'));
+            try {
+                const context = chrome.cast;
+                log('Cast API status:');
+                log('- API Available: ' + context.isAvailable);
+                log('- Has Extension: ' + (!!window.chrome.cast));
+            } catch (error) {
+                log('Error checking availability: ' + error.message);
+            }
+        }
+
+        function startSession() {
+            log('Requesting session...');
+            chrome.cast.requestSession(
+                session => log('Session started: ' + session.sessionId),
+                error => {
+                    log('Session error: ' + error.description);
+                    console.error('Detailed error:', error);
+                }
+            );
         }
     </script>
+        <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 
-<script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 </body>
 </html>
