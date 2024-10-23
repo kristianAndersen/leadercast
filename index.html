@@ -31,30 +31,40 @@
                 receiverApplicationId: applicationId,
                 autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
             });
+
+            // Add event listener for session state changes
+            cast.framework.CastContext.getInstance().addEventListener(
+                cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+                function(event) {
+                    if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+                        session = cast.framework.CastContext.getInstance().getCurrentSession();
+                        console.log("Session started: ", session);
+                        
+                        // Listen for messages from the receiver
+                        session.addMessageListener('urn:x-cast:com.example.helloworld', (namespace, message) => {
+                            document.getElementById('messageDisplay').textContent = 'Receiver says: ' + message.message;
+                        });
+                    }
+                }
+            );
         }
 
         // Start casting and send 'Hello' message to the receiver
         document.getElementById('castButton').addEventListener('click', () => {
             const context = cast.framework.CastContext.getInstance();
-            context.requestSession().then((sessionObj) => {
-                session = sessionObj;
-                session.sendMessage('urn:x-cast:com.example.helloworld', { message: 'Hello' });
-            }).catch((error) => {
-                console.error('Error starting session:', error);
+            context.requestSession().then(function() {
+                session = cast.framework.CastContext.getInstance().getCurrentSession();
+                if (session) {
+                    // Send message to the receiver
+                    session.sendMessage('urn:x-cast:com.example.helloworld', { message: 'Hello' });
+                    console.log('Message sent: Hello');
+                } else {
+                    console.error('No session available.');
+                }
+            }).catch(function(error) {
+                console.error('Error starting session: ', error);
             });
         });
-
-        // Listen for messages from the receiver
-        cast.framework.CastContext.getInstance().addEventListener(
-            cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-            (event) => {
-                if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
-                    session.addMessageListener('urn:x-cast:com.example.helloworld', (namespace, message) => {
-                        document.getElementById('messageDisplay').textContent = 'Receiver says: ' + message.message;
-                    });
-                }
-            }
-        );
     </script>
 </body>
 </html>
