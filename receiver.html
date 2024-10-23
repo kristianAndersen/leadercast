@@ -35,7 +35,7 @@
         function log(message) {
             const time = ((Date.now() - startTime) / 1000).toFixed(1);
             const logMessage = `[${time}s] ${message}`;
-            console.log(logMessage);
+            log(logMessage);
             debug.innerHTML = logMessage + '<br>' + debug.innerHTML;
         }
 
@@ -129,10 +129,10 @@
                     
                     const getScreenInfo = event.data.command;
                     
-                    console.log(getScreenInfo)
+                    log(getScreenInfo)
 
                     if (getScreenInfo == 'getScreenInfo') {
-                       console.log("getScreenInfo sending")
+                       log("getScreenInfo sending")
                         const info = getScreenInfo();
                         log(info);    
                         // Send screen info back to sender
