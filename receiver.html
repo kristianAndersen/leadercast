@@ -89,7 +89,9 @@
                 context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
                     log(event)
-                   // if (event.data.command === 'getScreenInfo') {
+                    const getScreenInfo = JSON.stringify(event.data.command);
+                    
+                    if (getScreenInfo === 'getScreenInfo') {
                         const info = "cool beans";
                        
                         // Send screen info back to sender
@@ -98,7 +100,7 @@
                         );
                         context.sendMessage(NAMESPACE, info);
                         log("no mesage sended")
-                  
+                    }
                 });
 
 
