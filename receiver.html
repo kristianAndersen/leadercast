@@ -82,11 +82,21 @@
                     log('SHUTDOWN - Receiver shutting down');
                 });
 
-                // Add custom message listener
-                context.addCustomMessageListener('urn:x-cast:com.custom.message', event => {
-                    log('MESSAGE - From sender: ' + event.senderId);
-                    log('DATA - ' + JSON.stringify(event.data));
+            
+
+                // Add message listener
+                context.addCustomMessageListener('urn:x-cast:com.screeninfo.app', event => {
+                    log('Message received: ' + JSON.stringify(event.data));
+                    if (event.data.command === 'getScreenInfo') {
+                        const info = "cool beans";
+                        // Send screen info back to sender
+                        context.sendCustomMessage('urn:x-cast:com.screeninfo.app', 
+                            event.senderId, 
+                            { type: 'screenInfo', data: info }
+                        );
+                    }
                 });
+
 
                 // Start the receiver
                 log('Starting receiver...');
