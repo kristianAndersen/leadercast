@@ -1,61 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verification Receiver</title>
+    <title>Corrected Receiver</title>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
     <style>
-        body { background: #333; color: white; font-family: Arial; padding: 20px; }
-        .status { background: rgba(0,0,0,0.5); padding: 10px; margin: 10px 0; }
+        body { 
+            background: #333; 
+            color: white; 
+            font-family: Arial; 
+            padding: 20px; 
+            margin: 0;
+            overflow: hidden;
+        }
+        .status { 
+            background: rgba(0,0,0,0.5); 
+            padding: 10px; 
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .log {
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h1>Verification Receiver</h1>
+    <h1>Cast Receiver</h1>
     <div id="status" class="status">Initializing...</div>
+    <div id="log" class="log"></div>
+
     <script>
-        const status = document.getElementById('status');
-        
+        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+
         function log(message) {
             console.log(message);
-            status.innerHTML += '<br>' + message;
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML = `${time}: ${message}<br>` + logDiv.innerHTML;
+            statusDiv.textContent = message;
         }
 
         try {
-            // Log initial load
-            log('Receiver page loaded at: ' + new Date().toISOString());
-            
-            // Verify Cast SDK loaded
-            if (cast && cast.framework) {
-                log('Cast SDK loaded successfully');
-            } else {
-                log('ERROR: Cast SDK not loaded');
-            }
-            
-            // Initialize receiver
+            log('Receiver page loaded');
+
+            // Initialize receiver context
             const context = cast.framework.CastReceiverContext.getInstance();
-            
-            // Set up logging
+
+            // Enable debug logging
             context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
-            
-            // Add basic event listeners
+
+            // Add event listeners
             context.addEventListener(cast.framework.system.EventType.READY, () => {
                 log('Receiver is ready');
             });
-            
-            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
-                log('Sender connected: ' + event.senderId);
+
+            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, (event) => {
+                log(`Sender connected: ${event.senderId}`);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, (event) => {
+                log(`Sender disconnected: ${event.senderId}`);
+            });
+
+            // Add custom message listener
+            context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', function(event) {
+                log(`Message received: ${JSON.stringify(event.data)}`);
+                
+                // Send acknowledgment back to sender
+                if (event.senderId) {
+                    context.sendCustomMessage('urn:x-cast:com.nokbok.helloworld', 
+                        event.senderId, 
+                        { status: 'received', originalMessage: event.data }
+                    );
+                }
+            });
+
+            // Start the receiver
+            log('Starting receiver...');
+            context.start({
+                statusText: 'Ready to receive',
+                applicationState: cast.framework.messages.ApplicationState.READY,
+                maxInactivity: 3600
             });
             
-            // Start receiver
-            context.start()
-                .then(() => {
-                    log('Receiver started successfully');
-                })
-                .catch(error => {
-                    log('ERROR starting receiver: ' + error);
-                });
-                
+            log('Receiver started');
+
         } catch (error) {
-            log('ERROR: ' + error.message);
+            log(`ERROR: ${error.message}`);
+            console.error('Full error:', error);
         }
     </script>
 </body>

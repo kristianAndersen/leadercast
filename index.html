@@ -1,89 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dual Mode Cast Sender</title>
+    <title>Simple Test Sender</title>
     <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .button-group { margin: 10px 0; }
-        button { 
-            padding: 10px 20px; 
-            margin: 5px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .log {
-            border: 1px solid #ccc;
-            padding: 10px;
+        body { font-family: Arial; margin: 20px; }
+        button { padding: 10px; margin: 5px; }
+        .log { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
             margin-top: 10px;
             height: 200px;
             overflow-y: auto;
             font-family: monospace;
-            background-color: #f8f9fa;
-        }
-        .status {
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #e9ecef;
-            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>Dual Mode Cast Sender</h1>
-    
-    <div class="button-group">
-        <h3>Default Receiver Mode</h3>
-        <button onclick="initializeDefault()">1. Initialize Default Receiver</button>
-        <button onclick="startDefaultSession()">2. Start Default Session</button>
-        <button onclick="loadMedia()">3. Load Sample Media</button>
-    </div>
-
-    <div class="button-group">
-        <h3>Custom Receiver Mode</h3>
-        <button onclick="initializeCustom()">1. Initialize Custom Receiver</button>
-        <button onclick="startCustomSession()">2. Start Custom Session</button>
-        <button onclick="sendCustomMessage()">3. Send Test Message</button>
-    </div>
-
-    <div class="status" id="status">Not initialized</div>
-    <div class="log" id="log"></div>
+    <h1>Cast Test Sender</h1>
+    <button onclick="initCast()">1. Initialize</button>
+    <button onclick="startSession()">2. Start Session</button>
+    <button onclick="sendMessage()">3. Send Message</button>
+    <div id="log" class="log"></div>
 
     <script>
         let castContext = null;
-        const CUSTOM_APP_ID = '64F29018';
-        const DEFAULT_APP_ID = 'CC1AD845';
-        
+        const APP_ID = '64F29018';
+
         function log(message) {
             const logDiv = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML = `${time}: ${message}<br>` + logDiv.innerHTML;
             console.log(message);
-            document.getElementById('status').textContent = message;
         }
 
         window['__onGCastApiAvailable'] = function(isAvailable) {
             log(`Cast API available: ${isAvailable}`);
+            if (isAvailable) initCast();
         };
 
-        function initializeCast(appId) {
+        function initCast() {
             try {
-                log(`Initializing Cast with App ID: ${appId}`);
-                
                 castContext = cast.framework.CastContext.getInstance();
                 castContext.setOptions({
-                    receiverApplicationId: appId,
+                    receiverApplicationId: APP_ID,
                     autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 });
 
-                // Add listeners
                 castContext.addEventListener(
                     cast.framework.CastContextEventType.CAST_STATE_CHANGED,
                     event => log(`Cast state: ${event.castState}`)
@@ -94,60 +57,20 @@
                     event => log(`Session state: ${event.sessionState}`)
                 );
 
-                log('Cast initialized successfully');
+                log('Cast initialized');
             } catch (error) {
-                log(`Initialization error: ${error.message}`);
+                log(`Init error: ${error.message}`);
             }
         }
 
-        function initializeDefault() {
-            initializeCast(DEFAULT_APP_ID);
+        function startSession() {
+            log('Starting session...');
+            castContext.requestSession()
+                .then(session => log('Session started'))
+                .catch(error => log(`Session error: ${error.message || 'Unknown error'}`));
         }
 
-        function initializeCustom() {
-            initializeCast(CUSTOM_APP_ID);
-        }
-
-        async function startDefaultSession() {
-            try {
-                log('Starting default session...');
-                const session = await castContext.requestSession();
-                log('Default session started successfully');
-            } catch (error) {
-                log(`Session error: ${error.message || 'Unknown error'}`);
-            }
-        }
-
-        async function startCustomSession() {
-            try {
-                log('Starting custom session...');
-                const session = await castContext.requestSession();
-                log('Custom session started successfully');
-            } catch (error) {
-                log(`Session error: ${error.message || 'Unknown error'}`);
-            }
-        }
-
-        function loadMedia() {
-            const session = castContext.getCurrentSession();
-            if (!session) {
-                log('No active session');
-                return;
-            }
-
-            const mediaInfo = new chrome.cast.media.MediaInfo(
-                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                'video/mp4'
-            );
-            
-            const request = new chrome.cast.media.LoadRequest(mediaInfo);
-            
-            session.loadMedia(request)
-                .then(() => log('Media loaded successfully'))
-                .catch(error => log(`Media load error: ${error.message || 'Unknown error'}`));
-        }
-
-        function sendCustomMessage() {
+        function sendMessage() {
             const session = castContext.getCurrentSession();
             if (!session) {
                 log('No active session');
@@ -156,12 +79,12 @@
 
             const message = {
                 type: 'test',
-                timestamp: new Date().toISOString()
+                time: new Date().toISOString()
             };
 
             session.sendMessage('urn:x-cast:com.nokbok.helloworld', message)
-                .then(() => log('Custom message sent successfully'))
-                .catch(error => log(`Message error: ${error.message || 'Unknown error'}`));
+                .then(() => log('Message sent'))
+                .catch(error => log(`Message error: ${error.message}`));
         }
     </script>
 </body>
