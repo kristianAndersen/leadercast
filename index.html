@@ -1,64 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromecast Sender</title>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+</head>
+<body>
+    <button id="castButton">Cast</button>
+    <p id="messageDisplay"></p>
 
+    <script>
+        const applicationId = 'ED052386';
+        let session = null;
 
+        // Initialize Cast API
+        function initializeCastApi() {
+            cast.framework.CastContext.getInstance().setOptions({
+                receiverApplicationId: applicationId,
+                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+            });
+        }
 
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Chromecast Sender</title>
-        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-    </head>
-    <body>
-        <h1>Chromecast Sender</h1>
-        <button id="castButton">Connect to Chromecast</button>
-        <button id="sendButton" disabled>Send "Hello"</button>
-    
-        <script>
-            const applicationId = 'ED052386';
-            let session = null;
-    
-            window.__onGCastApiAvailable = function(isAvailable) {
-                if (isAvailable) {
-                  console.log("cast api is available");
-                    initializeCastApi();
-                }
-            };
-    
-            function initializeCastApi() {
-              
-                cast.framework.CastContext.getInstance().setOptions({
-                    receiverApplicationId: applicationId,
-                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-                });
-    
-                const castButton = document.getElementById('castButton');
-                castButton.addEventListener('click', () => {
-                    cast.framework.CastContext.getInstance().requestSession()
-                        .then((castSession) => {
-                            session = castSession;
-                            document.getElementById('sendButton').disabled = false;
-                        })
-                        .catch((error) => {
-                            console.error('Error:', error);
-                        });
-                });
-    
-                document.getElementById('sendButton').addEventListener('click', sendMessage);
-
-                console.log("cast api is initialized");
+        // Load the Cast SDK
+        window['__onGCastApiAvailable'] = (isAvailable) => {
+            if (isAvailable) {
+                initializeCastApi();
             }
-    
-            function sendMessage() {
-                if (session) {
-                    session.sendMessage('urn:x-cast:com.example.message', 'hello')
-                        .then(() => {
-                            console.log('Message sent successfully');
-                        })
-                        .catch((error) => {
-                            console.error('Error sending message:', error);
-                        });
+        };
+
+        // Start casting and send 'Hello' message to the receiver
+        document.getElementById('castButton').addEventListener('click', () => {
+            const context = cast.framework.CastContext.getInstance();
+            context.requestSession().then((sessionObj) => {
+                session = sessionObj;
+                session.sendMessage('urn:x-cast:com.example.helloworld', { message: 'Hello' });
+            }).catch((error) => {
+                console.error('Error starting session:', error);
+            });
+        });
+
+        // Listen for messages from the receiver
+        cast.framework.CastContext.getInstance().addEventListener(
+            cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+            (event) => {
+                if (event.sessionState === cast.framework.SessionState.SESSION_STARTED) {
+                    session.addMessageListener('urn:x-cast:com.example.helloworld', (namespace, message) => {
+                        document.getElementById('messageDisplay').textContent = 'Receiver says: ' + message.message;
+                    });
                 }
             }
-        </script>
-        <!--    <script type="module" src="/main.js"></script>-->
-    </body>
-    </html>
+        );
+    </script>
+</body>
+</html>

@@ -1,33 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chromecast Receiver</title>
-    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-    <h1 id="message" style="font-size: 48px; text-align: center; margin-top: 100px;">Waiting for message...</h1>
-
+    <p>Receiver is running...</p>
+    
     <script>
+        // Initialize the receiver
         const context = cast.framework.CastReceiverContext.getInstance();
-        const options = new cast.framework.CastReceiverOptions();
-        options.customNamespaces = {
-            'urn:x-cast:com.example.message': cast.framework.system.MessageType.STRING
+        
+        // Listen for messages from the sender
+        const messageBus = context.getCastMessageBus('urn:x-cast:com.example.helloworld');
+        
+        messageBus.onMessage = (event) => {
+            console.log('Received message:', event.data.message);
+            
+            // Send 'World' back to the sender
+            messageBus.send(event.senderId, { message: 'World' });
         };
 
-        context.addCustomMessageListener('urn:x-cast:com.example.message', (event) => {
-            const message = event.data;
-            if (message === 'hello') {
-                document.getElementById('message').textContent = 'World';
-                // Send response back to sender
-                event.senderId && context.sendCustomMessage(
-                    'urn:x-cast:com.example.message',
-                    event.senderId,
-                    'world'
-                );
-            }
-        });
-
-        context.start(options);
+        context.start();
     </script>
 </body>
 </html>
