@@ -1,41 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verified Receiver</title>
+    <title>Test Receiver</title>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
     <style>
-        body { background-color: #000; color: #fff; font-family: Arial, sans-serif; }
-        #message { padding: 20px; font-size: 24px; }
+        body {
+            background-color: #2c3e50;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            font-size: 24px;
+        }
+        .status {
+            background-color: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .success {
+            color: #2ecc71;
+        }
     </style>
 </head>
 <body>
-    <div id="message">Initializing receiver...</div>
+    <h1>Test Receiver</h1>
+    <div class="status" id="status">Loading...</div>
+    <div class="status" id="messages"></div>
 
     <script>
-        const context = cast.framework.CastReceiverContext.getInstance();
-        const playerManager = context.getPlayerManager();
+        function updateStatus(message, isError = false) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + (isError ? 'error' : 'success');
+            statusDiv.textContent = message;
+            console.log(message);
+        }
 
-        // Enable debug logging
-        context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+        function addMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const time = new Date().toLocaleTimeString();
+            messagesDiv.innerHTML += `<div>${time}: ${message}</div>`;
+            console.log(message);
+        }
 
-        // Handle messages
-        context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
-            console.log('Message received:', event.data);
-            document.getElementById('message').textContent = 
-                'Message received: ' + JSON.stringify(event.data);
-        });
+        try {
+            updateStatus('Initializing receiver...');
+            const context = cast.framework.CastReceiverContext.getInstance();
+            
+            // Enable debug logging
+            context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
-        // Start receiver
-        context.start({
-            statusText: 'Application is starting...',
-            applicationState: cast.framework.messages.ApplicationState.READY,
-            maxInactivity: 3600
-        });
+            // System events
+            context.addEventListener(cast.framework.system.EventType.READY, () => {
+                updateStatus('Receiver is READY');
+                addMessage('System READY event received');
+            });
 
-        // Update status when ready
-        context.addEventListener(cast.framework.system.EventType.READY, () => {
-            document.getElementById('message').textContent = 'Ready to receive cast messages';
-        });
+            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, (event) => {
+                addMessage(`Sender connected: ${event.senderId}`);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, (event) => {
+                addMessage(`Sender disconnected: ${event.senderId}`);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.ERROR, (event) => {
+                updateStatus(`ERROR: ${event.errorCode}`, true);
+                addMessage(`Error occurred: ${event.errorCode}`);
+            });
+
+            // Custom message handler
+            context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', (event) => {
+                addMessage(`Message received: ${JSON.stringify(event.data)}`);
+            });
+
+            // Start the receiver
+            context.start({
+                statusText: 'Starting up...',
+                maxInactivity: 6000
+            }).then(() => {
+                updateStatus('Receiver started successfully');
+            }).catch((error) => {
+                updateStatus(`Failed to start: ${error}`, true);
+            });
+
+        } catch (error) {
+            updateStatus(`Initialization error: ${error.message}`, true);
+        }
     </script>
 </body>
 </html>
