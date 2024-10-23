@@ -1,92 +1,108 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cast Receiver</title>
-    <!-- Add the Cast Receiver SDK -->
+    <title>Production Cast Receiver</title>
+    <!-- Cast Receiver SDK -->
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-    <!-- Add the Cast Media Player library -->
+    <!-- Media Player Library -->
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/mediaplayer/1.0.0/media_player.js"></script>
     <style>
-        body { 
-            background: #333; 
-            color: white; 
-            font-family: Arial; 
+        body {
             margin: 0;
-            padding: 20px;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
         }
-        .status { 
-            background: rgba(0,0,0,0.5); 
-            padding: 10px; 
-            margin: 10px 0;
-            border-radius: 4px;
+        .debug-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 1000;
         }
         cast-media-player {
-            --splash-image: url('//your-image-url.jpg');
-            width: 100%;
-            height: 100%;
+            --splash-image: none;
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
-    <cast-media-player></cast-media-player>
-    <div id="status" class="status">Initializing...</div>
+    <div id="debug" class="debug-overlay">Initializing...</div>
+    <cast-media-player id="player"></cast-media-player>
 
     <script>
-        const statusDiv = document.getElementById('status');
+        const debug = document.getElementById('debug');
+        let startTime = Date.now();
 
         function log(message) {
-            console.log(message);
-            statusDiv.textContent = message;
+            const timestamp = new Date().toISOString();
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            const logMessage = `[${elapsed}s] ${message}`;
+            console.log(logMessage);
+            debug.innerHTML += `<br>${logMessage}`;
         }
 
         try {
-            log('Initializing receiver...');
+            log('Receiver starting...');
 
-            // Configure player options
-            const playerOptions = new cast.framework.PlaybackConfig();
-            playerOptions.autoResumeDuration = 5;
-
-            // Configure receiver options
-            const options = new cast.framework.CastReceiverOptions();
-            options.playbackConfig = playerOptions;
-            options.disableIdleTimeout = true;
-
-            // Initialize receiver context
+            // Get context instance
             const context = cast.framework.CastReceiverContext.getInstance();
+            
+            // Enable debug logging
+            context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+
+            // Get player manager
             const playerManager = context.getPlayerManager();
 
-            // Add custom message listener
-            context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
-                log('Message received: ' + JSON.stringify(event.data));
-                // Send acknowledgment
-                if (event.senderId) {
-                    context.sendCustomMessage('urn:x-cast:com.nokbok.helloworld', 
-                        event.senderId, 
-                        { status: 'received', message: event.data }
-                    );
-                }
-            });
+            // Create options
+            const options = new cast.framework.CastReceiverOptions();
+            options.disableIdleTimeout = true;
 
-            // Add event listeners
+            // Add system event listeners
             context.addEventListener(cast.framework.system.EventType.READY, () => {
-                log('Receiver is ready');
+                log('System Ready');
             });
 
-            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
-                log('Sender connected: ' + event.senderId);
+            context.addEventListener(cast.framework.system.EventType.SHOW_MEDIA_CONTROLS, () => {
+                log('Show Media Controls');
             });
 
-            context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, event => {
-                log('Sender disconnected: ' + event.senderId);
+            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, (event) => {
+                log(`Sender Connected [${event.senderId}]`);
             });
 
-            // Start the receiver
+            context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, (event) => {
+                log(`Sender Disconnected [${event.senderId}]`);
+            });
+
+            context.addEventListener(cast.framework.system.EventType.ERROR, (event) => {
+                log(`System Error: ${event.errorCode}`);
+            });
+
+            // Add custom message listener
+            context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', (event) => {
+                log(`Message received from [${event.senderId}]: ${JSON.stringify(event.data)}`);
+                
+                // Send acknowledgment
+                context.sendCustomMessage(
+                    'urn:x-cast:com.nokbok.helloworld',
+                    event.senderId,
+                    { status: 'received', timestamp: Date.now() }
+                );
+            });
+
+            // Start receiver
             log('Starting receiver...');
             context.start(options);
             log('Receiver started');
 
         } catch (error) {
-            log('Error: ' + error.message);
+            log(`ERROR: ${error.message}`);
             console.error('Full error:', error);
         }
     </script>
