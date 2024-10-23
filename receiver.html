@@ -28,6 +28,7 @@
     <div id="debug">Starting...</div>
 
     <script>
+        const NAMESPACE = 'urn:x-cast:com.screeninfo.app';
         const debug = document.getElementById('debug');
         const startTime = Date.now();
 
@@ -85,15 +86,16 @@
             
 
                 // Add message listener
-                context.addCustomMessageListener('urn:x-cast:com.screeninfo.app', event => {
+                context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
                     if (event.data.command === 'getScreenInfo') {
                         const info = "cool beans";
                         // Send screen info back to sender
-                        context.sendCustomMessage('urn:x-cast:com.screeninfo.app', 
-                            event.senderId, 
+                        context.sendCustomMessage(NAMESPACE, 
+                            
                             { type: 'screenInfo', data: info }
                         );
+                        
                     }
                 });
 
