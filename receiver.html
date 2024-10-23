@@ -24,6 +24,7 @@
 </head>
 <body>
     <div id="status" class="status">Starting...</div>
+    <cast-media-player></cast-media-player>
 
     <script>
         function updateStatus(message) {
@@ -32,53 +33,63 @@
         }
 
         try {
-            // Wait for cast SDK to be ready
-            if (!cast || !cast.framework) {
-                updateStatus('Cast SDK not available');
-                throw new Error('Cast SDK not available');
-            }
-
             updateStatus('Initializing...');
 
-            // Get context with error handling
+            // Get context
             const context = cast.framework.CastReceiverContext.getInstance();
-            if (!context) {
-                updateStatus('Failed to get receiver context');
-                throw new Error('Failed to get receiver context');
-            }
+            
+            // Set debug level
+            context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
+            // Configure player
+            const playerManager = context.getPlayerManager();
+            const playbackConfig = new cast.framework.PlaybackConfig();
+            
             // Configure options
-            const options = new cast.framework.CastReceiverOptions();
-            options.disableIdleTimeout = true;
+            const options = new cast.framework.CastReceiverOptions({
+                playbackConfig: playbackConfig,
+                supportedCommands: cast.framework.messages.Command.ALL_BASIC_MEDIA,
+                disableIdleTimeout: true
+            });
 
-            // Add event listeners
-            context.addEventListener(cast.framework.system.EventType.READY, (event) => {
+            // Add event listeners with safe error handling
+            context.addEventListener(cast.framework.system.EventType.READY, () => {
                 updateStatus('Ready for casting');
             });
 
             context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, (event) => {
-                updateStatus('Sender connected: ' + event.senderId);
+                updateStatus('Sender connected');
             });
 
             context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, (event) => {
-                updateStatus('Sender disconnected: ' + event.senderId);
+                updateStatus('Sender disconnected');
             });
 
             context.addEventListener(cast.framework.system.EventType.ERROR, (event) => {
-                updateStatus('Error: ' + JSON.stringify(event));
+                // Safely handle error event without stringifying the entire object
+                const errorInfo = {
+                    type: 'Error event received',
+                    code: event.errorCode || 'unknown',
+                    reason: event.reason || 'unknown'
+                };
+                updateStatus(`Error: ${errorInfo.code} - ${errorInfo.reason}`);
             });
 
             // Add custom message listener
             context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', (event) => {
-                updateStatus('Message received: ' + JSON.stringify(event.data));
-                // Send acknowledgment
                 try {
+                    // Safely handle the message data
+                    const messageData = typeof event.data === 'object' ? 
+                        JSON.stringify(event.data) : event.data;
+                    updateStatus('Message received: ' + messageData);
+
+                    // Send acknowledgment
                     context.sendCustomMessage('urn:x-cast:com.nokbok.helloworld', 
                         event.senderId, 
-                        { status: 'received', message: event.data }
+                        { status: 'received', timestamp: Date.now() }
                     );
                 } catch (error) {
-                    console.error('Error sending response:', error);
+                    updateStatus('Error processing message: ' + error.message);
                 }
             });
 
