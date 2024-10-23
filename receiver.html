@@ -91,10 +91,11 @@
                     if (event.data.command === 'getScreenInfo') {
                         const info = "cool beans";
                         // Send screen info back to sender
-                        context.sendCustomMessage(NAMESPACE, 
+                      /*  context.sendCustomMessage(NAMESPACE, 
                             
                             { type: 'screenInfo', data: info }
-                        );
+                        );*/
+                        context.sendMessage(NAMESPACE, info);
                         
                     }
                 });

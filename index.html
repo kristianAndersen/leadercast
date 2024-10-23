@@ -98,7 +98,7 @@
                         castSession = cast.framework.CastContext.getInstance().getCurrentSession();
                         updateStatus('Connected to Chromecast');
                         // Request screen info immediately after connection
-                        requestScreenInfo();
+                        //requestScreenInfo();
                     }
                 }
             );
@@ -122,10 +122,16 @@
 
             // Add listener for response
             castSession.addMessageListener(NAMESPACE, (namespace, message) => {
+                console.log('Message received:', message);
                 if (message.type === 'screenInfo') {
                     displayScreenInfo(message.data);
                 }
             });
+
+                // Add an event listener to the defined namespace channel
+                castSession.addMessageListener("namespace", (namespace, message) => {
+                console.log(namespace, message);
+                });
         }
 
         function stopCasting() {
