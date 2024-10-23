@@ -1,177 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cast Sender</title>
-   
+    <title>Debug Cast Sender</title>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-        .controls {
-            margin: 20px 0;
-        }
-        button {
-            padding: 12px 24px;
-            margin: 5px;
-            background: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #ccc;
-        }
-        #status {
-            padding: 15px;
-            margin: 20px 0;
-            background: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #debugOutput {
-            font-family: monospace;
-            padding: 15px;
-            margin: 20px 0;
-            background: #fff;
-            border-radius: 4px;
-            height: 200px;
+        body { font-family: Arial; margin: 20px; }
+        button { padding: 10px; margin: 5px; }
+        .log { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            height: 300px; 
             overflow-y: auto;
-            white-space: pre-wrap;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <h1>Cast Sender</h1>
-    <div class="controls">
-        <button id="initButton" onclick="checkCastAvailability()">1. Check Availability</button>
-        <button id="castButton" onclick="initCast()">2. Initialize Cast</button>
-        <button id="connectButton" onclick="startCasting()">3. Connect</button>
-        <button id="testButton" onclick="testDefaultReceiver()">Test Default Receiver</button>
+    <div>
+        <button onclick="initCustom()">Try Custom Receiver</button>
+        <button onclick="initDefault()">Try Default Receiver</button>
+        <button onclick="checkState()">Check State</button>
     </div>
-    <div id="status">Waiting to initialize...</div>
-    <div id="debugOutput"></div>
+    <div id="log" class="log"></div>
 
     <script>
-        // Configuration
         const CUSTOM_APP_ID = '64F29018';
         const DEFAULT_APP_ID = 'CC1AD845';
-        let currentAppId = CUSTOM_APP_ID;
         let castContext = null;
-        let isInitialized = false;
 
-        function log(message) {
-            const debugOutput = document.getElementById('debugOutput');
+        function log(msg) {
+            const div = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
-            debugOutput.innerHTML = `${time}: ${message}\n` + debugOutput.innerHTML;
-            console.log(message);
+            div.innerHTML = `${time}: ${msg}<br>` + div.innerHTML;
+            console.log(msg);
         }
 
-        function updateStatus(message) {
-            document.getElementById('status').textContent = message;
-            log(message);
-        }
-
-        // Initialize when Cast API is available
-        window['__onGCastApiAvailable'] = function(isAvailable, error) {
-            log(`Cast API available: ${isAvailable}${error ? ', Error: ' + error : ''}`);
-            if (isAvailable) {
-                document.getElementById('initButton').disabled = false;
-            }
+        window['__onGCastApiAvailable'] = function(isAvailable) {
+            log(`Cast API available: ${isAvailable}`);
         };
 
-        function checkCastAvailability() {
+        function initializeWithAppId(appId) {
             try {
-                if (chrome.cast && chrome.cast.isAvailable) {
-                    log('Chrome Cast is available');
-                    document.getElementById('castButton').disabled = false;
-                } else {
-                    log('Chrome Cast is not available');
-                }
-            } catch (error) {
-                log(`Error checking Cast availability: ${error.message}`);
-            }
-        }
-
-        function initCast() {
-            try {
-                log('Initializing Cast...');
+                log(`Initializing with app ID: ${appId}`);
                 
                 // Initialize Cast API
-                const initializeApiConfig = new chrome.cast.ApiConfig(
-                    new chrome.cast.SessionRequest(currentAppId),
-                    sessionListener,
-                    receiverListener,
+                const sessionRequest = new chrome.cast.SessionRequest(appId);
+                const apiConfig = new chrome.cast.ApiConfig(
+                    sessionRequest,
+                    function(status) {
+                        log('Receiver status: ' + status);
+                    },
+                    function(availability) {
+                        log('Receiver availability: ' + availability);
+                    },
                     chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 );
 
-                chrome.cast.initialize(initializeApiConfig, onInitSuccess, onInitError);
-
+                chrome.cast.initialize(apiConfig,
+                    function() {
+                        log('Initialization success');
+                        requestSession();
+                    },
+                    function(error) {
+                        log('Initialization error: ' + error.description);
+                    }
+                );
             } catch (error) {
-                log(`Initialization error: ${error.message}`);
-                console.error('Full error:', error);
+                log('Error: ' + error.message);
             }
         }
 
-        function sessionListener(session) {
-            log('New session created: ' + session.sessionId);
-            castSession = session;
-            document.getElementById('connectButton').disabled = false;
+        function initCustom() {
+            initializeWithAppId(CUSTOM_APP_ID);
         }
 
-        function receiverListener(availability) {
-            log('Receiver availability: ' + availability);
-            if (availability === chrome.cast.ReceiverAvailability.AVAILABLE) {
-                document.getElementById('connectButton').disabled = false;
-            }
+        function initDefault() {
+            initializeWithAppId(DEFAULT_APP_ID);
         }
 
-        function onInitSuccess() {
-            log('Cast initialization successful');
-            isInitialized = true;
-            document.getElementById('connectButton').disabled = false;
-        }
-
-        function onInitError(error) {
-            log('Cast initialization failed: ' + error.description);
-            console.error('Init error:', error);
-        }
-
-        function startCasting() {
-            if (!isInitialized) {
-                log('Cast not initialized. Please initialize first.');
-                return;
-            }
-
+        function requestSession() {
             log('Requesting session...');
             chrome.cast.requestSession(
                 function(session) {
-                    log('Session created successfully');
-                    castSession = session;
+                    log('Session created: ' + session.sessionId);
                 },
                 function(error) {
-                    log('Failed to create session: ' + error.description);
-                    console.error('Session error:', error);
+                    log('Session error: ' + error.description);
                 }
             );
         }
 
-        function testDefaultReceiver() {
-            currentAppId = DEFAULT_APP_ID;
-            log('Switching to default receiver...');
-            initCast();
-        }
+        function checkState() {
+            if (!chrome.cast || !chrome.cast.isAvailable) {
+                log('Cast API not available');
+                return;
+            }
 
-        // Initial setup
-        document.getElementById('initButton').disabled = true;
-        document.getElementById('castButton').disabled = true;
-        document.getElementById('connectButton').disabled = true;
+            log('Cast API is available');
+            log('Extension status: ' + (chrome.cast.isAvailable ? 'Loaded' : 'Not loaded'));
+        }
     </script>
 
-     <!-- Add Cast SDK -->
-     <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-     
+<script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 </body>
 </html>

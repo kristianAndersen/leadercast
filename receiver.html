@@ -1,98 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cast Receiver</title>
-    <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-        }
-        #debugOutput {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 1000;
-        }
-    </style>
+    <title>Minimal Cast Receiver</title>
+    <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
-<body>
-    <div id="debugOutput">Initializing...</div>
-    <cast-media-player></cast-media-player>
+<body style="background: #000; color: #fff;">
+    <div id="status" style="padding: 20px; font-family: Arial;">Starting...</div>
 
     <script>
-        const debug = document.getElementById('debugOutput');
+        const status = document.getElementById('status');
         
         function log(message) {
             console.log(message);
-            debug.innerHTML += '<br>' + message;
+            status.textContent = message;
         }
 
-        function initCastReceiver() {
-            try {
-                log('Starting initialization...');
-                
-                const context = cast.framework.CastReceiverContext.getInstance();
-                const playerManager = context.getPlayerManager();
+        try {
+            log('Starting receiver...');
+            
+            const context = cast.framework.CastReceiverContext.getInstance();
+            
+            context.addEventListener(cast.framework.system.EventType.READY, () => {
+                log('Receiver is ready');
+            });
 
-                // Enable debug logging
-                context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
+            context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, () => {
+                log('Sender connected');
+            });
 
-                const options = new cast.framework.CastReceiverOptions({
-                    supportedCommands: cast.framework.messages.Command.ALL_BASIC_MEDIA,
-                    disableIdleTimeout: true
-                });
+            // Start with basic options
+            context.start();
+            log('Receiver started');
 
-                // Event listeners
-                context.addEventListener(cast.framework.system.EventType.READY, () => {
-                    log('Receiver is ready');
-                });
-
-                context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
-                    log('Sender connected: ' + event.senderId);
-                });
-
-                context.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, event => {
-                    log('Sender disconnected: ' + event.senderId);
-                });
-
-                context.addEventListener(cast.framework.system.EventType.ERROR, event => {
-                    log('Error: ' + (event.errorCode || 'unknown'));
-                });
-
-                // Custom message handler
-                context.addCustomMessageListener('urn:x-cast:com.leadercast.app', event => {
-                    log('Message received: ' + JSON.stringify(event.data));
-                    context.sendCustomMessage('urn:x-cast:com.leadercast.app', event.senderId, {
-                        type: 'ack',
-                        message: 'Message received'
-                    });
-                });
-
-                // Start receiver
-                log('Starting receiver...');
-                context.start(options);
-                log('Receiver started');
-
-            } catch (error) {
-                log('Error: ' + error.message);
-                console.error(error);
-            }
-        }
-
-        // Initialize when loaded
-        if (cast && cast.framework) {
-            initCastReceiver();
-        } else {
-            log('Cast API not available');
+        } catch (error) {
+            log('Error: ' + error.message);
         }
     </script>
 </body>
