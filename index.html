@@ -1,103 +1,168 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Cast Sender</title>
+    <title>Improved Test Sender</title>
     <style>
-        body { font-family: Arial; margin: 20px; }
-        button { 
-            padding: 10px 20px; 
+        body { 
+            font-family: Arial; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
             margin: 5px;
-            font-size: 16px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #ccc;
         }
         #log {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 10px;
+            font-family: monospace;
+            padding: 15px;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
             height: 200px;
             overflow-y: auto;
-            font-family: monospace;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <h1>Test Cast Sender</h1>
-    <div>
-        <button onclick="initializeCast()">1. Initialize</button>
-        <button onclick="checkAvailability()">2. Check Availability</button>
-        <button onclick="startSession()">3. Start Session</button>
+    <h1>Cast Test</h1>
+
+    <div class="step">
+        <h3>Step 1: Initialize</h3>
+        <button onclick="initializeCastApi()">Initialize Cast API</button>
     </div>
+
+    <div class="step">
+        <h3>Step 2: Check Status</h3>
+        <button onclick="checkCastStatus()">Check Cast Status</button>
+        <button onclick="testDefaultReceiver()">Test Default Receiver</button>
+    </div>
+
+    <div class="step">
+        <h3>Step 3: Connect</h3>
+        <button onclick="requestSession()">Connect to Custom Receiver</button>
+    </div>
+
     <div id="log"></div>
 
     <script>
         const APP_ID = '64F29018';
-        let castContext = null;
+        let castSession = null;
 
         function log(message) {
+            console.log(message);
             const logDiv = document.getElementById('log');
             const time = new Date().toLocaleTimeString();
             logDiv.innerHTML = `${time}: ${message}<br>` + logDiv.innerHTML;
-            console.log(message);
         }
 
+        // Initialize when Cast API is available
         window['__onGCastApiAvailable'] = function(isAvailable) {
             log(`Cast API available: ${isAvailable}`);
-            if (isAvailable) initializeCast();
+            if (isAvailable) {
+                initializeCastApi();
+            }
         };
 
-        function initializeCast() {
+        function initializeCastApi() {
             try {
-                // Initialize using Chrome Cast V3 API
-                const initializeConfig = new chrome.cast.ApiConfig(
-                    new chrome.cast.SessionRequest(APP_ID),
+                log('Initializing Cast API...');
+
+                // Initialize using Chrome Cast API
+                const sessionRequest = new chrome.cast.SessionRequest(APP_ID);
+                const apiConfig = new chrome.cast.ApiConfig(
+                    sessionRequest,
                     sessionListener,
                     receiverListener,
                     chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 );
 
-                chrome.cast.initialize(
-                    initializeConfig,
-                    () => log('Initialize success'),
-                    error => log('Initialize error: ' + error.description)
+                chrome.cast.initialize(apiConfig,
+                    () => log('Cast API initialized successfully'),
+                    error => log('Cast API initialization error: ' + error.description)
                 );
 
             } catch (error) {
-                log('Error initializing: ' + error.message);
+                log('Error initializing Cast API: ' + error.message);
             }
         }
 
         function sessionListener(session) {
-            log('New session: ' + session.sessionId);
+            castSession = session;
+            log('New session ID: ' + session.sessionId);
         }
 
         function receiverListener(availability) {
-            log('Receiver status: ' + availability);
+            log('Receiver availability: ' + availability);
         }
 
-        function checkAvailability() {
+        function checkCastStatus() {
             if (!chrome.cast || !chrome.cast.isAvailable) {
-                log('Cast API not available');
+                log('Chrome Cast is not available');
                 return;
             }
 
-            try {
-                const context = chrome.cast;
-                log('Cast API status:');
-                log('- API Available: ' + context.isAvailable);
-                log('- Has Extension: ' + (!!window.chrome.cast));
-            } catch (error) {
-                log('Error checking availability: ' + error.message);
-            }
+            const state = chrome.cast.ReceiverAvailability;
+            log('Cast API Status:');
+            log('- API Available: Yes');
+            log('- Extension Loaded: ' + (!!window.chrome.cast));
+            log('- Current State: ' + (state || 'Unknown'));
         }
 
-        function startSession() {
+        function requestSession() {
             log('Requesting session...');
             chrome.cast.requestSession(
-                session => log('Session started: ' + session.sessionId),
-                error => {
-                    log('Session error: ' + error.description);
-                    console.error('Detailed error:', error);
+                function(session) {
+                    castSession = session;
+                    log('Session created successfully');
+                },
+                function(error) {
+                    log('Failed to create session: ' + error.description);
+                    log('Error code: ' + error.code);
                 }
             );
+        }
+
+        function testDefaultReceiver() {
+            try {
+                log('Testing default receiver...');
+                const sessionRequest = new chrome.cast.SessionRequest('CC1AD845');
+                const apiConfig = new chrome.cast.ApiConfig(
+                    sessionRequest,
+                    sessionListener,
+                    receiverListener,
+                    chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+                );
+
+                chrome.cast.initialize(apiConfig,
+                    () => {
+                        log('Default receiver initialized');
+                        chrome.cast.requestSession(
+                            session => log('Default receiver session created'),
+                            error => log('Default receiver error: ' + error.description)
+                        );
+                    },
+                    error => log('Default receiver init error: ' + error.description)
+                );
+
+            } catch (error) {
+                log('Error testing default receiver: ' + error.message);
+            }
         }
     </script>
         <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
