@@ -1,73 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minimal Cast Sender</title>
+    <title>Cast Sender</title>
     <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
     <style>
-        body { padding: 20px; font-family: Arial; }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 16px;
+        body { 
+            font-family: Arial; 
+            margin: 20px; 
+            background: #f5f5f5;
         }
-        #status {
+        .button-container {
             margin: 20px 0;
-            padding: 10px;
-            background: #f0f0f0;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 5px;
+            background: #4285f4;
+            color: white;
+            border: none;
             border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:disabled {
+            background: #ccc;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
     </style>
 </head>
 <body>
-    <h2>Cast Sender</h2>
-    <button onclick="initCast()">Initialize</button>
-    <button onclick="connect()">Connect</button>
-    <button onclick="sendMessage()">Send Test Message</button>
-    <div id="status">Waiting to initialize...</div>
+    <h1>Cast Sender</h1>
+    <div class="button-container">
+        <button onclick="initCast()">Initialize Cast</button>
+        <button onclick="requestSession()">Connect to Chromecast</button>
+        <button onclick="sendMessage()">Send Test Message</button>
+    </div>
+    <div id="status" class="status">Waiting to initialize...</div>
 
     <script>
+        const APP_ID = '64F29018';  // Updated Application ID
         let castContext = null;
-        const APP_ID = '64F29018';
 
         function updateStatus(message) {
             console.log(message);
             document.getElementById('status').textContent = message;
         }
 
-        // Initialize when Cast API is available
         window['__onGCastApiAvailable'] = function(isAvailable) {
-            updateStatus('Cast API available: ' + isAvailable);
-            if (isAvailable) initCast();
+            updateStatus(`Cast API available: ${isAvailable}`);
+            if (isAvailable) {
+                initCast();
+            }
         };
 
         function initCast() {
             try {
                 updateStatus('Initializing Cast...');
-                
                 castContext = cast.framework.CastContext.getInstance();
+                
                 castContext.setOptions({
                     receiverApplicationId: APP_ID,
-                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-                    language: 'en-US'
+                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 });
 
-                // Add basic listeners
                 castContext.addEventListener(
                     cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-                    event => updateStatus('Cast state: ' + event.castState)
+                    event => {
+                        updateStatus(`Cast state changed: ${event.castState}`);
+                    }
                 );
 
-                updateStatus('Cast initialized. Ready to connect.');
+                castContext.addEventListener(
+                    cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+                    event => {
+                        console.log(`Session state changed: ${event.sessionState}`);
+                    }
+                );
+
+                updateStatus('Cast initialized successfully');
             } catch (error) {
-                updateStatus('Init error: ' + error.message);
+                updateStatus(`Initialization error: ${error.message}`);
+                console.error(error);
             }
         }
 
-        function connect() {
-            updateStatus('Requesting session...');
+        function requestSession() {
+            if (!castContext) {
+                updateStatus('Cast not initialized');
+                return;
+            }
+
+            updateStatus('Requesting cast session...');
             castContext.requestSession()
-                .then(() => updateStatus('Connected!'))
-                .catch(error => updateStatus('Connection error: ' + error.message));
+                .then(session => {
+                    updateStatus('Connected to Chromecast!');
+                    console.log('Session created:', session);
+                })
+                .catch(error => {
+                    updateStatus(`Connection failed: ${error.message || 'Unknown error'}`);
+                    console.error('Session error:', error);
+                });
         }
 
         function sendMessage() {
@@ -77,10 +115,14 @@
                 return;
             }
 
-            const message = { text: 'Hello!', time: new Date().toISOString() };
+            const message = {
+                type: 'test',
+                timestamp: new Date().toISOString()
+            };
+
             session.sendMessage('urn:x-cast:com.nokbok.helloworld', message)
-                .then(() => updateStatus('Message sent'))
-                .catch(error => updateStatus('Message error: ' + error.message));
+                .then(() => updateStatus('Message sent successfully'))
+                .catch(error => updateStatus(`Failed to send message: ${error.message}`));
         }
     </script>
 </body>
