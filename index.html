@@ -145,15 +145,15 @@
             const testButton = document.getElementById('testButton');
             
             if (castState === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-                connectButton.disabled = true;
+               // connectButton.disabled = true;
                // testButton.disabled = true;
                 log('No cast devices available');
             } else if (castState === cast.framework.CastState.NOT_CONNECTED) {
-                connectButton.disabled = false;
+               // connectButton.disabled = false;
                 //testButton.disabled = false;
                 log('Ready to connect to cast device');
             } else if (castState === cast.framework.CastState.CONNECTED) {
-                connectButton.disabled = true;
+               // connectButton.disabled = true;
                 //testButton.disabled = true;
                 log('Connected to cast device');
             }
