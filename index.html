@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Cast Sender</title>
-    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+   
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,29 +39,33 @@
             border-radius: 4px;
             height: 200px;
             overflow-y: auto;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
     <h1>Cast Sender</h1>
     <div class="controls">
-        <button onclick="checkCastState()">Check State</button>
-        <button onclick="startCasting()">Start Casting</button>
-        <button onclick="stopCasting()">Stop Casting</button>
-        <button onclick="sendTestMessage()">Send Test Message</button>
+        <button id="initButton" onclick="checkCastAvailability()">1. Check Availability</button>
+        <button id="castButton" onclick="initCast()">2. Initialize Cast</button>
+        <button id="connectButton" onclick="startCasting()">3. Connect</button>
+        <button id="testButton" onclick="testDefaultReceiver()">Test Default Receiver</button>
     </div>
-    <div id="status">Not initialized</div>
+    <div id="status">Waiting to initialize...</div>
     <div id="debugOutput"></div>
 
     <script>
-        const APP_ID = '64F29018';
-        const NAMESPACE = 'urn:x-cast:com.leadercast.app';
-        let castSession = null;
-        
+        // Configuration
+        const CUSTOM_APP_ID = '64F29018';
+        const DEFAULT_APP_ID = 'CC1AD845';
+        let currentAppId = CUSTOM_APP_ID;
+        let castContext = null;
+        let isInitialized = false;
+
         function log(message) {
             const debugOutput = document.getElementById('debugOutput');
             const time = new Date().toLocaleTimeString();
-            debugOutput.innerHTML = `${time}: ${message}<br>` + debugOutput.innerHTML;
+            debugOutput.innerHTML = `${time}: ${message}\n` + debugOutput.innerHTML;
             console.log(message);
         }
 
@@ -70,91 +74,104 @@
             log(message);
         }
 
-        window['__onGCastApiAvailable'] = function(isAvailable) {
-            log(`Cast API available: ${isAvailable}`);
-            if (isAvailable) initializeCastApi();
+        // Initialize when Cast API is available
+        window['__onGCastApiAvailable'] = function(isAvailable, error) {
+            log(`Cast API available: ${isAvailable}${error ? ', Error: ' + error : ''}`);
+            if (isAvailable) {
+                document.getElementById('initButton').disabled = false;
+            }
         };
 
-        function initializeCastApi() {
+        function checkCastAvailability() {
             try {
-                log('Initializing Cast API...');
-                cast.framework.CastContext.getInstance().setOptions({
-                    receiverApplicationId: APP_ID,
-                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-                });
-
-                // Add listeners
-                cast.framework.CastContext.getInstance().addEventListener(
-                    cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-                    event => log(`Cast state changed: ${event.castState}`)
-                );
-
-                cast.framework.CastContext.getInstance().addEventListener(
-                    cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-                    event => log(`Session state changed: ${event.sessionState}`)
-                );
-
-                log('Cast API initialized successfully');
+                if (chrome.cast && chrome.cast.isAvailable) {
+                    log('Chrome Cast is available');
+                    document.getElementById('castButton').disabled = false;
+                } else {
+                    log('Chrome Cast is not available');
+                }
             } catch (error) {
-                log(`Initialization error: ${error.message}`);
+                log(`Error checking Cast availability: ${error.message}`);
             }
         }
 
-        function checkCastState() {
-            const context = cast.framework.CastContext.getInstance();
-            const state = context.getCastState();
-            const session = context.getCurrentSession();
-            log(`Current cast state: ${state}`);
-            log(`Active session: ${session ? 'Yes' : 'No'}`);
+        function initCast() {
+            try {
+                log('Initializing Cast...');
+                
+                // Initialize Cast API
+                const initializeApiConfig = new chrome.cast.ApiConfig(
+                    new chrome.cast.SessionRequest(currentAppId),
+                    sessionListener,
+                    receiverListener,
+                    chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+                );
+
+                chrome.cast.initialize(initializeApiConfig, onInitSuccess, onInitError);
+
+            } catch (error) {
+                log(`Initialization error: ${error.message}`);
+                console.error('Full error:', error);
+            }
+        }
+
+        function sessionListener(session) {
+            log('New session created: ' + session.sessionId);
+            castSession = session;
+            document.getElementById('connectButton').disabled = false;
+        }
+
+        function receiverListener(availability) {
+            log('Receiver availability: ' + availability);
+            if (availability === chrome.cast.ReceiverAvailability.AVAILABLE) {
+                document.getElementById('connectButton').disabled = false;
+            }
+        }
+
+        function onInitSuccess() {
+            log('Cast initialization successful');
+            isInitialized = true;
+            document.getElementById('connectButton').disabled = false;
+        }
+
+        function onInitError(error) {
+            log('Cast initialization failed: ' + error.description);
+            console.error('Init error:', error);
         }
 
         function startCasting() {
-            log('Requesting cast session...');
-            cast.framework.CastContext.getInstance().requestSession()
-                .then(session => {
-                    castSession = session;
-                    log('Cast session established successfully');
-                })
-                .catch(error => {
-                    log(`Failed to start casting: ${error.message || 'Unknown error'}`);
-                    console.error('Cast error:', error);
-                });
-        }
-
-        function stopCasting() {
-            const session = cast.framework.CastContext.getInstance().getCurrentSession();
-            if (session) {
-                log('Stopping cast session...');
-                session.endSession(true)
-                    .then(() => log('Session ended'))
-                    .catch(error => log(`Error ending session: ${error.message}`));
-            } else {
-                log('No active session to stop');
-            }
-        }
-
-        function sendTestMessage() {
-            const session = cast.framework.CastContext.getInstance().getCurrentSession();
-            if (!session) {
-                log('No active session');
+            if (!isInitialized) {
+                log('Cast not initialized. Please initialize first.');
                 return;
             }
 
-            const message = {
-                type: 'test',
-                timestamp: new Date().toISOString()
-            };
-
-            log('Sending test message...');
-            session.sendMessage(NAMESPACE, message)
-                .then(() => log('Message sent successfully'))
-                .catch(error => log(`Failed to send message: ${error.message}`));
+            log('Requesting session...');
+            chrome.cast.requestSession(
+                function(session) {
+                    log('Session created successfully');
+                    castSession = session;
+                },
+                function(error) {
+                    log('Failed to create session: ' + error.description);
+                    console.error('Session error:', error);
+                }
+            );
         }
 
-        // Initialize when loaded
-        if (cast && cast.framework) {
-            initializeCastApi();
+        function testDefaultReceiver() {
+            currentAppId = DEFAULT_APP_ID;
+            log('Switching to default receiver...');
+            initCast();
         }
+
+        // Initial setup
+        document.getElementById('initButton').disabled = true;
+        document.getElementById('castButton').disabled = true;
+        document.getElementById('connectButton').disabled = true;
     </script>
+
+     <!-- Add Cast SDK -->
+     <script src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+     
 </body>
 </html>
