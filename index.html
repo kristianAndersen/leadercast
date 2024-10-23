@@ -3,179 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAF Sender</title>
-    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <title>Basic Cast Setup</title>
+    
+    <!-- Cast SDK -->
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    
     <style>
-        .button { margin: 10px; padding: 10px; }
-        .status { margin: 10px; padding: 10px; border: 1px solid #ccc; }
-        .debug { font-family: monospace; white-space: pre-wrap; }
+        .status { padding: 10px; margin: 10px; border: 1px solid #ccc; }
+        button { margin: 5px; padding: 8px; }
     </style>
 </head>
 <body>
-    <h1>Cast Application Framework Sender</h1>
+    <h1>Basic Cast Setup</h1>
     <div>
-        <button class="button" onclick="initCast()">Initialize</button>
-        <button class="button" onclick="startSession()">Start Session</button>
-        <button class="button" onclick="stopSession()">Stop Session</button>
-        <button class="button" onclick="checkState()">Check State</button>
+        <button onclick="checkCastStatus()">Check Status</button>
+        <button onclick="startCasting()">Start Cast</button>
+        <button onclick="testDefaultReceiver()">Test Default Receiver</button>
     </div>
-    <div id="status" class="status">Not initialized</div>
-    <div id="debug" class="debug"></div>
+    <div id="status" class="status">Initializing...</div>
 
     <script>
-        let castContext = null;
-        const DEBUG = true;
-
-        function log(message, data = null) {
-            const timestamp = new Date().toISOString();
-            const logMessage = `${timestamp}: ${message}`;
-            console.log(logMessage, data || '');
-            
-            if (DEBUG) {
-                const debugDiv = document.getElementById('debug');
-                debugDiv.textContent = logMessage + '\n' + debugDiv.textContent;
-            }
-            
-            document.getElementById('status').textContent = message;
-        }
-
+        const CUSTOM_RECEIVER_APP_ID = 'ED052386';
+        const DEFAULT_RECEIVER_APP_ID = 'CC1AD845';
+        let currentAppId = CUSTOM_RECEIVER_APP_ID;
+        
+        // Initialize cast framework
         window['__onGCastApiAvailable'] = function(isAvailable) {
-            log(`Cast API available: ${isAvailable}`);
             if (isAvailable) {
-                initCast();
+                initializeCastApi();
             }
         };
 
-        async function initCast() {
+        function log(message) {
+            const status = document.getElementById('status');
+            const time = new Date().toLocaleTimeString();
+            status.innerHTML += `<br>${time}: ${message}`;
+            console.log(message);
+        }
+
+        function initializeCastApi() {
             try {
-                log('Initializing Cast...');
-                
-                // Initialize Cast Context
-                castContext = cast.framework.CastContext.getInstance();
-                
-                // Configure Cast options
-                castContext.setOptions({
-                    receiverApplicationId: 'ED052386',
-                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-                    language: 'en-US',
-                    resumeSavedSession: false
+                cast.framework.CastContext.getInstance().setOptions({
+                    receiverApplicationId: currentAppId,
+                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
                 });
-
-                // Add state change listener
-                castContext.addEventListener(
+                
+                // Add listeners
+                const context = cast.framework.CastContext.getInstance();
+                
+                context.addEventListener(
                     cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-                    (event) => {
-                        log('Cast State Changed', event.castState);
-                    }
+                    event => log(`Cast State: ${event.castState}`)
                 );
-
-                // Add session state listener
-                castContext.addEventListener(
+                
+                context.addEventListener(
                     cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-                    (event) => {
-                        log('Session State Changed', event.sessionState);
-                    }
+                    event => log(`Session State: ${event.sessionState}`)
                 );
-
-                log('Cast initialized successfully');
-                checkState();
-
+                
+                log('Cast API initialized');
             } catch (error) {
-                log('Cast initialization error', error);
+                log(`Initialization Error: ${error.message}`);
             }
         }
 
-        async function startSession() {
+        function checkCastStatus() {
             try {
-                log('Starting cast session...');
+                const context = cast.framework.CastContext.getInstance();
+                const state = context.getCastState();
+                const session = context.getCurrentSession();
                 
-                if (!castContext) {
-                    throw new Error('Cast not initialized');
-                }
-
-                const state = castContext.getCastState();
-                log('Current cast state', state);
-
-                if (state === cast.framework.CastState.NO_DEVICES_AVAILABLE) {
-                    throw new Error('No Cast devices available');
-                }
-
-                const currentSession = castContext.getCurrentSession();
-                if (currentSession) {
-                    log('Session already exists');
-                    return;
-                }
-
-                const session = await castContext.requestSession();
-                log('Session created successfully', session);
-
-                // Try to send a test message
+                log(`Current Cast State: ${state}`);
+                log(`Active Session: ${session ? 'Yes' : 'No'}`);
+                
                 if (session) {
-                    try {
-                        await session.sendMessage('urn:x-cast:com.nokbok.helloworld', {
-                            type: 'test',
+                    log(`Session ID: ${session.getSessionId()}`);
+                    log(`Session Status: ${session.getSessionState()}`);
+                }
+            } catch (error) {
+                log(`Status Check Error: ${error.message}`);
+            }
+        }
+
+        function startCasting() {
+            try {
+                const context = cast.framework.CastContext.getInstance();
+                log('Requesting cast session...');
+                
+                context.requestSession()
+                    .then(session => {
+                        log('Session started successfully');
+                        // Try to send a test message
+                        return session.sendMessage('urn:x-cast:com.nokbok.helloworld', {
                             message: 'Hello from sender!',
                             timestamp: new Date().toISOString()
                         });
-                        log('Test message sent successfully');
-                    } catch (msgError) {
-                        log('Error sending test message', msgError);
-                    }
-                }
-
+                    })
+                    .then(() => log('Test message sent'))
+                    .catch(error => {
+                        log(`Cast Error: ${error.message || 'Unknown error'}`);
+                        log(`Error Code: ${error.code || 'No code'}`);
+                        if (error.description) log(`Description: ${error.description}`);
+                    });
             } catch (error) {
-                log('Session start error', error);
-                
-                // Additional error details
-                if (error.code) {
-                    log('Error code:', error.code);
-                }
-                if (error.description) {
-                    log('Error description:', error.description);
-                }
-                if (error.details) {
-                    log('Error details:', error.details);
-                }
+                log(`Cast Error: ${error.message}`);
             }
         }
 
-        async function stopSession() {
+        function testDefaultReceiver() {
             try {
-                if (!castContext) {
-                    throw new Error('Cast not initialized');
-                }
-
-                const currentSession = castContext.getCurrentSession();
-                if (currentSession) {
-                    await currentSession.endSession(true);
-                    log('Session ended successfully');
-                } else {
-                    log('No active session to stop');
-                }
-
+                // Switch to default receiver
+                currentAppId = DEFAULT_RECEIVER_APP_ID;
+                initializeCastApi();
+                log('Switched to default receiver');
+                setTimeout(startCasting, 1000); // Wait a second before casting
             } catch (error) {
-                log('Error stopping session', error);
-            }
-        }
-
-        function checkState() {
-            if (!castContext) {
-                log('Cast not initialized');
-                return;
-            }
-
-            const state = castContext.getCastState();
-            log('Current Cast State:', state);
-
-            const session = castContext.getCurrentSession();
-            if (session) {
-                log('Active session found', {
-                    sessionId: session.getSessionId(),
-                    namespaces: session.getNamespaces(),
-                    status: session.getSessionState()
-                });
-            } else {
-                log('No active session');
+                log(`Switch Error: ${error.message}`);
             }
         }
     </script>

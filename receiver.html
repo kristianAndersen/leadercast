@@ -1,42 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple CAF Receiver</title>
+    <title>Verified Receiver</title>
     <script type="text/javascript" src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+    <style>
+        body { background-color: #000; color: #fff; font-family: Arial, sans-serif; }
+        #message { padding: 20px; font-size: 24px; }
+    </style>
 </head>
 <body>
-    <div id="debug" style="position:fixed; top:10px; left:10px; color:white; background:rgba(0,0,0,0.7); padding:10px;">
-        Initializing...
-    </div>
-    <script>
-        const debug = msg => {
-            console.log(msg);
-            document.getElementById('debug').innerText = msg;
-        };
+    <div id="message">Initializing receiver...</div>
 
+    <script>
         const context = cast.framework.CastReceiverContext.getInstance();
-        
+        const playerManager = context.getPlayerManager();
+
         // Enable debug logging
         context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
-        // Add event listeners
-        context.addEventListener(cast.framework.system.EventType.READY, () => {
-            debug('Receiver is ready');
-        });
-
-        context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
-            debug('Sender connected: ' + event.senderId);
-        });
-
-        // Listen for custom messages
+        // Handle messages
         context.addCustomMessageListener('urn:x-cast:com.nokbok.helloworld', event => {
-            debug('Message received: ' + JSON.stringify(event.data));
+            console.log('Message received:', event.data);
+            document.getElementById('message').textContent = 
+                'Message received: ' + JSON.stringify(event.data);
         });
 
-        // Start the receiver
+        // Start receiver
         context.start({
-            statusText: 'Ready to receive',
-            maxInactivity: 6000
+            statusText: 'Application is starting...',
+            applicationState: cast.framework.messages.ApplicationState.READY,
+            maxInactivity: 3600
+        });
+
+        // Update status when ready
+        context.addEventListener(cast.framework.system.EventType.READY, () => {
+            document.getElementById('message').textContent = 'Ready to receive cast messages';
         });
     </script>
 </body>
