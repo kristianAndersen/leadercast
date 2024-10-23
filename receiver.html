@@ -39,6 +39,43 @@
             debug.innerHTML = logMessage + '<br>' + debug.innerHTML;
         }
 
+        function getScreenInfo() {
+            const info = {
+                // Screen dimensions
+                screenWidth: window.screen.width,
+                screenHeight: window.screen.height,
+                screenAvailWidth: window.screen.availWidth,
+                screenAvailHeight: window.screen.availHeight,
+                screenColorDepth: window.screen.colorDepth,
+                screenPixelDepth: window.screen.pixelDepth,
+                
+                // Window dimensions
+                windowInnerWidth: window.innerWidth,
+                windowInnerHeight: window.innerHeight,
+                windowOuterWidth: window.outerWidth,
+                windowOuterHeight: window.outerHeight,
+                
+                // Device pixel ratio
+                devicePixelRatio: window.devicePixelRatio,
+                
+                // Document dimensions
+                documentWidth: document.documentElement.clientWidth,
+                documentHeight: document.documentElement.clientHeight,
+                
+                // Media query information
+                isFullHD: window.matchMedia('(min-width: 1920px)').matches,
+                is4K: window.matchMedia('(min-width: 3840px)').matches,
+                
+                // Additional screen properties
+                orientation: screen.orientation ? screen.orientation.type : 'unknown',
+                refreshRate: screen.refreshRate || 'unknown'
+            };
+
+            return info;
+        }
+
+
+
         function initializeReceiver() {
             try {
                 log('Initializing receiver...');
@@ -94,11 +131,11 @@
                     log(getScreenInfo)
 
                     if (getScreenInfo == 'getScreenInfo') {
-                        const info = "cool beans";
+                        const info = getScreenInfo();
                        
                         // Send screen info back to sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, 
-                            { type: 'screenInfo', data: info }
+                            { 'type': 'screenInfo', 'data': info }
                         );
                         context.sendMessage(NAMESPACE, info);
                         log("no mesage sended")
