@@ -1,0 +1,60 @@
+
+
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Chromecast Sender</title>
+        <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    </head>
+    <body>
+        <h1>Chromecast Sender</h1>
+        <button id="castButton">Connect to Chromecast</button>
+        <button id="sendButton" disabled>Send "Hello"</button>
+    
+        <script>
+            const applicationId = 'ED052386';
+            let session = null;
+    
+            window.__onGCastApiAvailable = function(isAvailable) {
+                if (isAvailable) {
+                    initializeCastApi();
+                }
+            };
+    
+            function initializeCastApi() {
+                cast.framework.CastContext.getInstance().setOptions({
+                    receiverApplicationId: applicationId,
+                    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+                });
+    
+                const castButton = document.getElementById('castButton');
+                castButton.addEventListener('click', () => {
+                    cast.framework.CastContext.getInstance().requestSession()
+                        .then((castSession) => {
+                            session = castSession;
+                            document.getElementById('sendButton').disabled = false;
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        });
+                });
+    
+                document.getElementById('sendButton').addEventListener('click', sendMessage);
+            }
+    
+            function sendMessage() {
+                if (session) {
+                    session.sendMessage('urn:x-cast:com.example.message', 'hello')
+                        .then(() => {
+                            console.log('Message sent successfully');
+                        })
+                        .catch((error) => {
+                            console.error('Error sending message:', error);
+                        });
+                }
+            }
+        </script>
+        <!--    <script type="module" src="/main.js"></script>-->
+    </body>
+    </html>
