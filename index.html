@@ -3,81 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Receiver Test Sender</title>
-    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <title>Basic Custom Receiver Test</title>
+    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
     <script>
-        let castSession = null;
-        const CUSTOM_NAMESPACE = 'urn:x-cast:com.nokbok.helloworld';
+        let applicationID = 'ED052386';
+        let namespace = 'urn:x-cast:com.nokbok.helloworld';
+        let session = null;
 
-        window['__onGCastApiAvailable'] = function(isAvailable) {
-            if (isAvailable) {
+        // Initialize cast API when it's available
+        window['__onGCastApiAvailable'] = function(loaded, errorInfo) {
+            if (loaded) {
                 initializeCastApi();
+            } else {
+                console.error('Cast API not available:', errorInfo);
+                updateStatus('Cast API not available: ' + errorInfo);
             }
         };
 
         function initializeCastApi() {
-            const context = cast.framework.CastContext.getInstance();
-            context.setOptions({
-                receiverApplicationId: 'ED052386',
-                autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-            });
+            // Initialize API
+            let sessionRequest = new chrome.cast.SessionRequest(applicationID);
+            let apiConfig = new chrome.cast.ApiConfig(
+                sessionRequest,
+                sessionListener,
+                receiverListener,
+                chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+            );
 
-            // Listen for session state changes
-            context.addEventListener(
-                cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
-                event => {
-                    console.log('Session State:', event.sessionState);
-                    updateStatus('Session: ' + event.sessionState);
+            chrome.cast.initialize(apiConfig, onInitSuccess, onInitError);
+        }
+
+        // Success callback for initialization
+        function onInitSuccess() {
+            console.log('Init success');
+            updateStatus('Initialization successful');
+        }
+
+        // Error callback for initialization
+        function onInitError(error) {
+            console.error('Init error:', error);
+            updateStatus('Initialization failed: ' + error.description);
+        }
+
+        // Callback on finding receivers
+        function receiverListener(e) {
+            console.log('Receiver status:', e);
+            if (e === chrome.cast.ReceiverAvailability.AVAILABLE) {
+                updateStatus('Chromecast available');
+            } else {
+                updateStatus('No Chromecast available');
+            }
+        }
+
+        // Handle session
+        function sessionListener(e) {
+            console.log('New session:', e);
+            session = e;
+            updateStatus('Session connected');
+        }
+
+        // Launch the receiver app
+        function launchApp() {
+            console.log('Launching app...');
+            updateStatus('Launching app...');
+            
+            chrome.cast.requestSession(
+                function(e) {
+                    session = e;
+                    updateStatus('Session created');
+                    console.log('Session created:', e);
+                },
+                function(error) {
+                    console.error('Launch error:', error);
+                    updateStatus('Launch failed: ' + error.description);
                 }
             );
         }
 
+        // Send a test message
         function sendMessage() {
-            const session = cast.framework.CastContext.getInstance().getCurrentSession();
             if (session) {
-                const message = {
+                let message = {
                     type: 'test',
+                    message: 'Hello from sender!',
                     timestamp: new Date().toISOString()
                 };
-                
-                session.sendMessage(CUSTOM_NAMESPACE, message)
-                    .then(() => {
-                        console.log('Message sent successfully');
-                        updateStatus('Message sent');
-                    })
-                    .catch(error => {
-                        console.error('Error sending message:', error);
-                        updateStatus('Send error: ' + error);
-                    });
+
+                session.sendMessage(namespace, message, 
+                    function() {
+                        console.log('Message sent');
+                        updateStatus('Message sent successfully');
+                    },
+                    function(error) {
+                        console.error('Message error:', error);
+                        updateStatus('Failed to send message: ' + error);
+                    }
+                );
             } else {
                 updateStatus('No active session');
             }
         }
 
-        function connect() {
-            cast.framework.CastContext.getInstance()
-                .requestSession()
-                .then(session => {
-                    console.log('Connected:', session);
-                    updateStatus('Connected!');
-                    castSession = session;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    updateStatus('Error: ' + error.message || error);
-                });
+        // Stop app
+        function stopApp() {
+            if (session) {
+                session.stop(
+                    function() {
+                        console.log('Session stopped');
+                        updateStatus('Session stopped');
+                        session = null;
+                    },
+                    function(error) {
+                        console.error('Stop error:', error);
+                        updateStatus('Error stopping session: ' + error);
+                    }
+                );
+            }
         }
 
         function updateStatus(message) {
+            console.log(message);
             document.getElementById('status').textContent = message;
-            console.log('Status:', message);
         }
     </script>
+    <style>
+        button {
+            margin: 10px;
+            padding: 10px;
+        }
+        #status {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body>
-    <h1>Custom Receiver Test</h1>
-    <button onclick="connect()">Connect</button>
+    <h1>Basic Custom Receiver Test</h1>
+    <button onclick="launchApp()">Launch App</button>
     <button onclick="sendMessage()">Send Test Message</button>
-    <div id="status">Not connected</div>
+    <button onclick="stopApp()">Stop App</button>
+    <div id="status">Initializing...</div>
 </body>
 </html>
