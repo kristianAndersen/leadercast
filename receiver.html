@@ -89,18 +89,20 @@
                 context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
                     log(event)
-                   // if (event.data.command === 'getScreenInfo') {
+                    if (event.data.command === 'getScreenInfo') {
                         const info = "cool beans";
-                        log(typeof event);
-                        log(typeof event.data);
+                       
                         // Send screen info back to sender
-                      /*  context.sendCustomMessage(NAMESPACE, 
+                        context.sendCustomMessage(NAMESPACE, 
                             
                             { type: 'screenInfo', data: info }
-                        );*/
+                        );
                         context.sendMessage(NAMESPACE, info);
                         
-                   // }
+                    }else{
+                        log("whhhhat")
+                        log(event.data.command)
+                    }
                 });
 
 
