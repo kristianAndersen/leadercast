@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <head>
     <title>Final Test Receiver</title>
     <style>
@@ -27,7 +28,20 @@
 <body>
     <div id="debug">Starting...</div>
 
+
+    <section id="iframewrapper">
+
+
+    </section>
+
+
+
     <script>
+
+
+
+
+
         const NAMESPACE = 'urn:x-cast:com.screeninfo.app';
         const debug = document.getElementById('debug');
         const startTime = Date.now();
@@ -38,6 +52,25 @@
             console.log(logMessage);
             debug.innerHTML = logMessage + '<br>' + debug.innerHTML;
         }
+
+
+        const addiframes = (urls) => {
+            
+            const iframewrapper = document.getElementById('iframewrapper');
+
+            urls.forEach((urlItem, index) => {
+                
+                let ifrm = document.createElement("iframe");
+                ifrm.setAttribute("src", urlItem);
+                ifrm.style.width = "100%";
+                ifrm.style.height = "100%";
+                iframewrapper.appendChild(ifrm);
+            
+            });
+        };
+
+
+
 
         function getScreenInfo() {
             log("Getting screen info...");
@@ -101,7 +134,7 @@
                 // Add system event listeners
                 context.addEventListener(cast.framework.system.EventType.READY, () => {
                     log('READY - System is ready');
-                    getScreenInfo();
+                    //getScreenInfo();
                 });
 
                 context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
@@ -133,6 +166,8 @@
                     const getScreenInfo = event.data.command;
                     const data =event.data.data;
                     
+                    addiframes(data)
+
                     if (getScreenInfo === 'getScreenInfo') {
                        log('Sending screen info back to sender');
                         const info = data;
