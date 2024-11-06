@@ -12,7 +12,7 @@
             height: 100%;
         }
         #debug {
-            display: none;
+          
             color: #fff;
             z-index: 1000;
             position: fixed;
@@ -300,6 +300,7 @@ class IframeSlideshow {
     }
 
     startSlideshow() {
+        log('slidehow is starting...');
         if (this.interval) {
             clearInterval(this.interval);
         }
@@ -350,7 +351,7 @@ const scaler = new IframeScaler({
         function log(message) {
             const time = ((Date.now() - startTime) / 1000).toFixed(1);
             const logMessage = `[${time}s] ${message}`;
-            console.log(logMessage);
+           
             debug.innerHTML = logMessage + '<br>' + debug.innerHTML;
         }
   
@@ -363,7 +364,7 @@ const scaler = new IframeScaler({
             const iframewrapper = document.getElementById('iframewrapper');
 
            // urls.forEach((urlItem, index) => {
-                //log(urlItem)
+                log(urls)
              // Set the URL of your content
                     //scaler.setUrl(urlItem);
 
@@ -381,44 +382,6 @@ const scaler = new IframeScaler({
         };
 
         
-
-
-
-        function getScreenInfo() {
-            log("Getting screen info...");
-            const info = {
-                // Screen dimensions
-                screenWidth: window.screen.width,
-                screenHeight: window.screen.height,
-                screenAvailWidth: window.screen.availWidth,
-                screenAvailHeight: window.screen.availHeight,
-                screenColorDepth: window.screen.colorDepth,
-                screenPixelDepth: window.screen.pixelDepth,
-                
-                // Window dimensions
-                windowInnerWidth: window.innerWidth,
-                windowInnerHeight: window.innerHeight,
-                windowOuterWidth: window.outerWidth,
-                windowOuterHeight: window.outerHeight,
-                
-                // Device pixel ratio
-                devicePixelRatio: window.devicePixelRatio,
-                
-                // Document dimensions
-                documentWidth: document.documentElement.clientWidth,
-                documentHeight: document.documentElement.clientHeight,
-                
-                // Media query information
-                isFullHD: window.matchMedia('(min-width: 1920px)').matches,
-                is4K: window.matchMedia('(min-width: 3840px)').matches,
-                
-                // Additional screen properties
-                orientation: screen.orientation ? screen.orientation.type : 'unknown',
-                refreshRate: screen.refreshRate || 'unknown'
-            };
-
-            log( JSON.stringify(info) );
-        }
         
 
         function initializeReceiver() {
