@@ -127,18 +127,19 @@
                     
                     const getScreenInfo = event.data.command;
                     const data = JSON.stringify(event.data.data);
-                    const screenInfo = JSON.stringify(getScreenInfo());
+                    
 
                     if (getScreenInfo === 'getScreenInfo') {
-                     
+                        const info = data;
+                        const screenInfo = getScreenInfo();
                         // Send screen info back to the specific sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
                             'type': 'screenInfo',
-                            'data': data,
-                            'screenInfo': screenInfo
+                            'data': info,
+                            'screenInfo':screenInfo
                         });
                         log("Message sent back to sender");
-                        
+                        log("Message: ", info);
                     }
                 });
            
