@@ -40,6 +40,7 @@
         }
 
         function getScreenInfo() {
+            log("Getting screen info...");
             const info = {
                 // Screen dimensions
                 screenWidth: window.screen.width,
@@ -77,7 +78,7 @@
 
         function initializeReceiver() {
             
-            getScreenInfo()
+           
 
             try {
                 log('Initializing receiver...');
@@ -100,6 +101,7 @@
                 // Add system event listeners
                 context.addEventListener(cast.framework.system.EventType.READY, () => {
                     log('READY - System is ready');
+                    getScreenInfo();
                 });
 
                 context.addEventListener(cast.framework.system.EventType.SENDER_CONNECTED, event => {
