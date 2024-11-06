@@ -128,15 +128,16 @@
                     const getScreenInfo = event.data.command;
                     const data =event.data.data;
                     
+                    log(getScreenInfo());
 
                     if (getScreenInfo === 'getScreenInfo') {
+                       
                         const info = data;
-                        const screenInfo = getScreenInfo();
+        
                         // Send screen info back to the specific sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
                             'type': 'screenInfo',
-                            'data': info,
-                            'screenInfo':screenInfo,
+                            'data': info
                         });
 
                         log("Message sent back to sender");
