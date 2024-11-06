@@ -64,9 +64,47 @@
             console.log(logMessage);
             debug.innerHTML = logMessage + '<br>' + debug.innerHTML;
         }
+        function scaleContent() {
+        const container = document.getElementById('iframewrapper');
+      
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach((iframe) => {
+
+            // Target dimensions (what the content expects)
+            const targetWidth = 2394;
+            const targetHeight = 1241;
+            
+            // Available space (actual TV resolution)
+            const availableWidth = container.clientWidth;
+            const availableHeight = container.clientHeight;
+            
+            // Calculate scale factors
+            const scaleX = availableWidth / targetWidth;
+            const scaleY = availableHeight / targetHeight;
+            
+            // Use the smaller scale factor to ensure content fits
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Apply the transform
+            iframe.style.transform = `scale(${scale})`;
+            
+            // Center the content if needed
+            const scaledWidth = targetWidth * scale;
+            const scaledHeight = targetHeight * scale;
+            
+            if (scaledWidth < availableWidth) {
+                iframe.style.left = `${(availableWidth - scaledWidth) / 2}px`;
+            }
+            
+            if (scaledHeight < availableHeight) {
+                iframe.style.top = `${(availableHeight - scaledHeight) / 2}px`;
+            }
+        });
+
+        }
 
 
-
+/*
         const ajustIframes=() => {
             const iframes = document.querySelectorAll('iframe');
             iframes.forEach((iframe) => {
@@ -88,7 +126,7 @@
                 iframe.style.transformOrigin = 'top left';
             });
         }
-
+*/
 
         const addiframes = (urls) => {
             
@@ -111,7 +149,7 @@
             
             });
 
-         //   ajustIframes();
+            scaleContent();
         };
 
         
