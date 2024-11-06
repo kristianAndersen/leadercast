@@ -127,7 +127,7 @@
                     const getScreenInfo = event.data.command;
                     
                     if (getScreenInfo === 'getScreenInfo') {
-                        const info = "cool beans";
+                        const info = getScreenInfo();
                         
                         // Send screen info back to the specific sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
