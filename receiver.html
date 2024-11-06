@@ -66,6 +66,30 @@
         }
 
 
+
+        const ajustIframes=() => {
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach((iframe) => {
+            
+                const targetWidth = 960;
+                const targetHeight = 540;
+                const originalWidth = 1920; // Original width of the iframe content
+                const originalHeight = 1080; // Original height of the iframe content
+
+                // Calculate the scale factor
+                const scaleWidth = targetWidth / originalWidth;
+                const scaleHeight = targetHeight / originalHeight;
+                const scale = Math.min(scaleWidth, scaleHeight);
+
+                // Apply the scale
+                iframe.style.width = `${originalWidth}px`;
+                iframe.style.height = `${originalHeight}px`;
+                iframe.style.transform = `scale(${scale})`;
+                iframe.style.transformOrigin = 'top left';
+            });
+        }
+
+        
         const addiframes = (urls) => {
             
 
@@ -86,8 +110,11 @@
                 iframewrapper.appendChild(ifrm);
             
             });
+
+            ajustIframes();
         };
 
+        
 
 
 
