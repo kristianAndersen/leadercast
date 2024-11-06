@@ -125,9 +125,9 @@
                 context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
                     const getScreenInfo = event.data.command;
-                    
+                    const data = event.data.data;
                     if (getScreenInfo === 'getScreenInfo') {
-                        const info = getScreenInfo();
+                        const info = data;
                         
                         // Send screen info back to the specific sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
