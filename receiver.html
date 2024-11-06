@@ -126,7 +126,7 @@
                     log('Message received: ' + JSON.stringify(event.data));
                     
                     const getScreenInfo = event.data.command;
-                    const data = JSON.stringify(event.data.data);
+                    const data =event.data.data;
                     
 
                     if (getScreenInfo === 'getScreenInfo') {
@@ -136,8 +136,9 @@
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
                             'type': 'screenInfo',
                             'data': info,
-                            'screenInfo':screenInfo
+                            'screenInfo':screenInfo,
                         });
+
                         log("Message sent back to sender");
                         log("Message: ", info);
                     }
