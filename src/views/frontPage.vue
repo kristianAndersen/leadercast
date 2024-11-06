@@ -91,8 +91,8 @@ export default defineComponent({
     if (url !== oldUrls[index]) {
       console.log(`URL ${index} changed from ${oldUrls[index]} to ${url}`);
     }
-  });
-}, { deep: true });
+    });
+  }, { deep: true });
 
 
     const castIt = () => {
@@ -100,7 +100,7 @@ export default defineComponent({
         validUrls.value[index] = UrlSanitizer(urlItem.url);
         console.log(`Input ${index + 1}: ${ validUrls.value[index]}`);
       //cast to TV
-      connectToReceiver()
+     // connectToReceiver()
   
       });
     };

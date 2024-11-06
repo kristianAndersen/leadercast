@@ -19,7 +19,7 @@ export default defineComponent({
   setup(props) {
     
     const frameSrc=props.src;
-    
+    console.log(props);
     return {
       frameSrc
     };

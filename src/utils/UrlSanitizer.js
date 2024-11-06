@@ -7,27 +7,23 @@ const UrlSanitizer = (urltxt) => {
 
     urltxt = urltxt.trim();
 
-    // Add https:// if the protocol is missing
-    if (!/^(?:f|ht)tps?:\/\//.test(urltxt)) {
-      urltxt = 'https://' + urltxt;
+    // Add https:// if https or www is missing 
+    if (!/^https:\/\/(?!www\.)/.test(urltxt)) {
+      urltxt = 'https://' + urltxt.replace(/^(?:https?:\/\/)?(?:www\.)?/, '');
     }
 
-    // Add www. if missing (but only if it’s an https:// URL without www)
-    if (/^https:\/\//.test(urltxt) && !/^https:\/\/www\./.test(urltxt)) {
-      urltxt = urltxt.replace(/^https:\/\//, 'https://');
-    }
+    console.log(urltxt);
 
-    // URL validation pattern for complex domains and minimum length requirements
+    // Updated URL validation pattern to allow https:// without requiring www.
     const pattern = new RegExp(
       '^' +
-      '(?:https?:\\/\\/)?' + // protocol (optional)
-      '(?:(?:[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9]\\.)+)' + // subdomains
-      '[a-zA-Z0-9][-a-zA-Z0-9]{1,}' + // main domain name (minimum 4 chars)
-      '\\.' + // dot before TLD
-      '[a-zA-Z]{2,}' + // TLD
-      '(?::\\d+)?' + // port (optional)
+      '(https:\\/\\/)' +                // requires https://
+      '((?!www\\.)[a-zA-Z0-9-]+\\.)*' + // optional subdomains, excluding www
+      '[a-zA-Z0-9-]{2,}\\.' +           // main domain
+      '[a-zA-Z]{2,}' +                  // top-level domain (e.g., .com, .dk)
+      '(?::\\d+)?' +                    // port (optional)
       '(?:\\/[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)?' + // path (optional)
-      '(?:#[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)?' + // fragment/hash (optional)
+      '(?:#[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)?' +   // fragment/hash (optional)
       '$'
     );
 
@@ -36,8 +32,11 @@ const UrlSanitizer = (urltxt) => {
     if (result) {
       console.log('url is valid');
       return new URL(urltxt);
+    } else {
+      console.log('url is invalid');
+      console.log(result, urltxt);
+      return '';
     }
-
   } catch (error) {
     // If URL is invalid, return an empty string
     return '';
