@@ -22,6 +22,19 @@
             max-width: 90%;
             word-wrap: break-word;
         }
+        #iframewrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +74,7 @@
                 
                 let ifrm = document.createElement("iframe");
                 ifrm.setAttribute("src", urlItem);
+                ifrm.setAttribute("allow", "fullscreen");
                 ifrm.style.width = "100%";
                 ifrm.style.height = "100%";
                 iframewrapper.appendChild(ifrm);
