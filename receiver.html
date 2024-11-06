@@ -301,11 +301,13 @@ class IframeSlideshow {
     }
 
     nextSlide() {
+        log('Next slide');
         this.currentIndex = (this.currentIndex + 1) % this.urls.length;
         this.showSlide(this.currentIndex);
     }
 
     startSlideshow() {
+        log("Starting slideshow");
         if (this.interval) {
             clearInterval(this.interval);
         }
