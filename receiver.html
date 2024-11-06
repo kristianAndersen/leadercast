@@ -17,11 +17,12 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.7);
             padding: 20px;
             border-radius: 8px;
             max-width: 90%;
             word-wrap: break-word;
+            font-size: 10px;
         }
         #iframewrapper {
             width: 100%;
@@ -150,7 +151,40 @@ class IframeScaler {
     }
 
     setUrl(url){
-        this.iframe.src = url;
+          // Verify and clean the URL
+          try {
+            // Create URL object to validate and normalize the URL
+            const urlObj = new URL(url);
+            
+            // Ensure we preserve the hash part of the URL
+            const finalUrl = urlObj.origin + urlObj.pathname + urlObj.search + urlObj.hash;
+            
+            log('Original URL:', url);
+            log('Processed URL:', finalUrl);
+            
+            // Set sandbox attribute to allow necessary features
+            this.iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
+            
+            // Add other necessary attributes
+            this.iframe.setAttribute('allow', 'fullscreen');
+            
+            // Set the source
+            this.iframe.src = finalUrl;
+            
+            // Add load event listener to debug loading issues
+            this.iframe.onload = () => {
+                log('iframe loaded successfully');
+            };
+            
+            this.iframe.onerror = (error) => {
+               error('iframe loading error:', error);
+            };
+            
+        } catch (error) {
+            error('URL parsing error:', error);
+            // Fallback to direct assignment if URL parsing fails
+            this.iframe.src = url;
+        }
     }
 
     updateConfig(newConfig) {
