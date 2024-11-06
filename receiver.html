@@ -12,7 +12,7 @@
             height: 100%;
         }
         #debug {
-          
+            display: none;
             color: #fff;
             z-index: 1000;
             position: fixed;
@@ -377,7 +377,7 @@ const scaler = new IframeScaler({
                     const slideshow = new IframeSlideshow(urls, {
                         targetWidth: 2500,
                         targetHeight: 1400,
-                        transitionTime: 10000,  // 10 seconds
+                        transitionTime: 30000,  // 10 seconds
                         overscan: [0, 0, 0, 0],
                         rotation: 0
                     });
