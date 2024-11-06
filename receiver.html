@@ -68,6 +68,12 @@
 
         const addiframes = (urls) => {
             
+
+            if (window.innerWidth === 960 && window.innerHeight === 540) {
+                document.body.style.transform = 'scale(0.5)';
+                document.body.style.transformOrigin = '0 0';
+            }
+
             const iframewrapper = document.getElementById('iframewrapper');
 
             urls.forEach((urlItem, index) => {
