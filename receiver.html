@@ -203,7 +203,6 @@ class IframeSlideshow {
         this.scalers = [];
         this.transitionTime = config.transitionTime || 10000;
         
-        // Store scaler configuration
         this.scalerConfig = {
             targetWidth: config.targetWidth || 2394,
             targetHeight: config.targetHeight || 1241,
@@ -233,10 +232,17 @@ class IframeSlideshow {
                 width: 100%;
                 height: 100%;
                 opacity: 0;
+                pointer-events: none;
                 transition: opacity 1s ease-in-out;
+                z-index: 1;
             }
             .slide-container.active {
                 opacity: 1;
+                pointer-events: auto;
+                z-index: 2;
+            }
+            .scaled-frame-container {
+                z-index: inherit;
             }
         `;
         document.head.appendChild(style);
@@ -300,7 +306,6 @@ class IframeSlideshow {
     }
 
     startSlideshow() {
-        log('slidehow is starting...');
         if (this.interval) {
             clearInterval(this.interval);
         }
@@ -327,7 +332,6 @@ class IframeSlideshow {
         });
     }
 }
-
 // Usage example:
 /*
 const urls = [
