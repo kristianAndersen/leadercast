@@ -194,10 +194,154 @@ class IframeScaler {
     }
 }
 
+
+
+class IframeSlideshow {
+    constructor(urls, config = {}) {
+        this.urls = urls;
+        this.currentIndex = 0;
+        this.scalers = [];
+        this.transitionTime = config.transitionTime || 10000;
+        
+        // Store scaler configuration
+        this.scalerConfig = {
+            targetWidth: config.targetWidth || 2394,
+            targetHeight: config.targetHeight || 1241,
+            overscan: config.overscan || [0, 0, 0, 0],
+            rotation: config.rotation || 0
+        };
+        
+        this.initialize();
+    }
+
+    initialize() {
+        // Add required styles for slideshow
+        const style = document.createElement('style');
+        style.textContent = `
+            .slideshow-wrapper {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            }
+            .slide-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0;
+                transition: opacity 1s ease-in-out;
+            }
+            .slide-container.active {
+                opacity: 1;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Create main wrapper
+        this.wrapper = document.createElement('div');
+        this.wrapper.className = 'slideshow-wrapper';
+        document.body.appendChild(this.wrapper);
+
+        // Initialize a scaler for each URL
+        this.urls.forEach((url, index) => {
+            // Create slide container
+            const slideContainer = document.createElement('div');
+            slideContainer.className = 'slide-container';
+            if (index === 0) slideContainer.classList.add('active');
+            this.wrapper.appendChild(slideContainer);
+
+            // Create new scaler instance
+            const scaler = new IframeScaler({
+                ...this.scalerConfig
+            });
+            
+            // Move scaler's container into our slide container
+            slideContainer.appendChild(scaler.container);
+            
+            // Set the URL
+            scaler.setUrl(url);
+            
+            // Store the references
+            this.scalers.push({
+                scaler,
+                container: slideContainer
+            });
+        });
+
+        // Start the slideshow
+        this.startSlideshow();
+        
+        // Handle window resize for all scalers
+        window.addEventListener('resize', () => {
+            this.scalers.forEach(({scaler}) => scaler.updateScaling());
+        });
+    }
+
+    showSlide(index) {
+        // Remove active class from all slides
+        this.scalers.forEach(({container}) => {
+            container.classList.remove('active');
+        });
+        
+        // Add active class to current slide
+        this.scalers[index].container.classList.add('active');
+        
+        // Update scaling for current slide
+        this.scalers[index].scaler.updateScaling();
+    }
+
+    nextSlide() {
+        this.currentIndex = (this.currentIndex + 1) % this.urls.length;
+        this.showSlide(this.currentIndex);
+    }
+
+    startSlideshow() {
+        if (this.interval) {
+            clearInterval(this.interval);
+        }
+        this.interval = setInterval(() => this.nextSlide(), this.transitionTime);
+    }
+
+    pause() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+    }
+
+    resume() {
+        if (!this.interval) {
+            this.startSlideshow();
+        }
+    }
+
+    updateConfig(newConfig) {
+        this.scalerConfig = { ...this.scalerConfig, ...newConfig };
+        this.scalers.forEach(({scaler}) => {
+            scaler.updateConfig(this.scalerConfig);
+        });
+    }
+}
+
+// Usage example:
+/*
+const urls = [
+    'https://example1.com',
+    'https://example2.com',
+    'https://example3.com'
+];
+
+
+*/
+/*
 const scaler = new IframeScaler({
     targetWidth: 2500,
     targetHeight: 1400
-});
+});*/
 
         const NAMESPACE = 'urn:x-cast:com.screeninfo.app';
         const debug = document.getElementById('debug');
@@ -214,19 +358,24 @@ const scaler = new IframeScaler({
         const addiframes = (urls) => {
             
 
-            if (window.innerWidth === 960 && window.innerHeight === 540) {
-                //document.body.style.transform = 'scale(0.5)';
-                //document.body.style.transformOrigin = '0 0';
-            }
+      
 
             const iframewrapper = document.getElementById('iframewrapper');
 
-            urls.forEach((urlItem, index) => {
-                log(urlItem)
+           // urls.forEach((urlItem, index) => {
+                //log(urlItem)
              // Set the URL of your content
-                    scaler.setUrl(urlItem);
-            
-            });
+                    //scaler.setUrl(urlItem);
+
+                    const slideshow = new IframeSlideshow(urls, {
+                        targetWidth: 2500,
+                        targetHeight: 1400,
+                        transitionTime: 10000,  // 10 seconds
+                        overscan: [0, 0, 0, 0],
+                        rotation: 0
+                    });
+                                
+           // });
 
            
         };
