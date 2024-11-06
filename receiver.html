@@ -124,41 +124,24 @@
                 // Add message listener
                 context.addCustomMessageListener(NAMESPACE, event => {
                     log('Message received: ' + JSON.stringify(event.data));
+                    
                     const getScreenInfo = event.data.command;
-                    const data = event.data.data;
+                    const data = JSON.stringify(event.data.data);
+                    const screenInfo = JSON.stringify(getScreenInfo());
+
                     if (getScreenInfo === 'getScreenInfo') {
-                        const info = data;
-                        
+                     
                         // Send screen info back to the specific sender
                         context.sendCustomMessage(NAMESPACE, event.senderId, {
                             'type': 'screenInfo',
-                            'data': info
+                            'data': data,
+                            'screenInfo': screenInfo
                         });
                         log("Message sent back to sender");
-                        log("Message: ", info);
+                        
                     }
                 });
-                /*
-                context.addCustomMessageListener(NAMESPACE, event => {
-                    log('Message received: ' + JSON.stringify(event.data));
-                    log(event)
-                    const getScreenInfo = event.data.command;
-                    
-                    log(getScreenInfo)
-
-                    if (getScreenInfo == 'getScreenInfo') {
-                        const info = "cool beans";
-                       
-                        // Send screen info back to sender
-                        context.sendCustomMessage(NAMESPACE, event.senderId, 
-                            { 'type': 'screenInfo', 'data': info }
-                        );
-                        context.sendMessage(NAMESPACE, info);
-                        log("no mesage sended")
-                    }
-                });*/
-
-
+           
                 // Start the receiver
                 log('Starting receiver...');
                 context.start(options);
