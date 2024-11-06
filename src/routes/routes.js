@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, RouteComponent } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -6,7 +6,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'OverView',
-      component: (): Promise<RouteComponent> => import('@/views/frontPage.vue'),
+      component: () => import('@/views/frontPage.vue'),
    
     },
   ],
