@@ -76,6 +76,9 @@
         
 
         function initializeReceiver() {
+            
+            getScreenInfo()
+
             try {
                 log('Initializing receiver...');
 
@@ -128,11 +131,6 @@
                     const getScreenInfo = event.data.command;
                     const data =event.data.data;
                     
-                    log(getScreenInfo)
-
-                   // getScreenInfo()
-                  
-
                     if (getScreenInfo === 'getScreenInfo') {
                        log('Sending screen info back to sender');
                         const info = data;
