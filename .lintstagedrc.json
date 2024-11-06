@@ -1,0 +1,17 @@
+{
+    "*.{js,jsx,ts,tsx,vue}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.html": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{css,scss,vue}": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.{md,markdown}": [
+      "prettier --write"
+    ]
+  }

@@ -1,0 +1,91 @@
+{
+  "extends": ["stylelint-config-standard", "stylelint-config-standard-vue"],
+  "plugins": ["stylelint-order"],
+  "rules": {
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "tailwind",
+          "apply",
+          "variants",
+          "responsive",
+          "screen",
+          "layer",
+          "include",
+          "extend"
+        ]
+      }
+    ],
+    "no-empty-source": null,
+    "no-descending-specificity": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "value-no-vendor-prefix": null,
+    "property-no-vendor-prefix": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": [
+          "deep",
+          "global",
+          "sloted",
+          "v-deep",
+          "v-global",
+          "v-slotted"
+        ]
+      }
+    ],
+    "order/properties-order": [
+      "position",
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "z-index",
+      "display",
+      "justify-content",
+      "align-items",
+      "flex-direction",
+      "flex",
+      "flex-wrap",
+      "flex-grow",
+      "flex-shrink",
+      "gap",
+      "width",
+      "min-width",
+      "max-width",
+      "height",
+      "min-height",
+      "max-height",
+      "padding",
+      "padding-top",
+      "padding-right",
+      "padding-bottom",
+      "padding-left",
+      "margin",
+      "margin-top",
+      "margin-right",
+      "margin-bottom",
+      "margin-left",
+      "font-family",
+      "font-size",
+      "font-weight",
+      "line-height",
+      "color",
+      "background",
+      "background-color",
+      "border",
+      "border-radius",
+      "transition"
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.vue"],
+      "customSyntax": "postcss-html"
+    }
+  ]
+}
