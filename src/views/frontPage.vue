@@ -100,7 +100,7 @@ export default defineComponent({
         validUrls.value[index] = UrlSanitizer(urlItem.url);
         console.log(`Input ${index + 1}: ${ validUrls.value[index]}`);
       //cast to TV
-     // connectToReceiver()
+      connectToReceiver()
   
       });
     };

@@ -109,14 +109,7 @@ export function useChromecast() {
     if (pollInterval) clearInterval(pollInterval);
   });
   
-  /*
-  onMounted(() => {
-    window['__onGCastApiAvailable'] = function(available) {
-      isAvailable.value = available
-      status.value = `Cast API available: ${available}`
-      if (available) initializeCastApi()
-    }
-  })*/
+ 
 
   // Return the public interface
   return {
