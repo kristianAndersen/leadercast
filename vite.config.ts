@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ command, mode }) => {
       
-  const isProduction = mode === 'production';
+
 
   return {
     plugins: [vue()],
@@ -18,7 +18,7 @@ export default defineConfig(({ command, mode }) => {
             '@': path.resolve(__dirname, './src'),
         },
     },
-    server: isProduction ? {} : {
+    server:  {
         https: {
             key: fs.readFileSync("".concat(__dirname, "/cert/key.pem")),
             cert: fs.readFileSync("".concat(__dirname, "/cert/cert.pem"))
