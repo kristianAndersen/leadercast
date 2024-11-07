@@ -14,6 +14,7 @@ export function useChromecast() {
   let pollInterval;
   // Initialize Cast API when it becomes available
   const initializeCastApi = () => {
+    console.log("Initializing Cast API");
     cast.framework.CastContext.getInstance().setOptions({
       receiverApplicationId: APP_ID,
       autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
