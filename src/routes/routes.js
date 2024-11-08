@@ -8,13 +8,7 @@ const router = createRouter({
       name: 'OverView',
       component: () => import('@/views/frontPage.vue'),
 
-    },
-    {
-      path: '/receiver',
-      name: 'Receiver.',
-      component: () => import('@/views/ChromecastReceiver.vue'),
-
-    },
+    }
   ],
 });
 
